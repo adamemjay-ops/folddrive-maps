@@ -74,6 +74,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-molise-43066195902-1/molise.fdmap"
     },
     {
+      "name": "Puglia",
+      "revision": "2026-11-11",
+      "bytes": 271874673,
+      "release": "7114dda24bdc4fe00df2153e333c3dfb781a229dc9668277ed0efd54c9c3adcb",
+      "sha256": "d555dbe2269e213a8e58605395506f786fe79ce2360d6a21bf3355fc2738e0de",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-puglia-43066195902-1/puglia.fdmap"
+    },
+    {
       "name": "Trentino-Alto Adige",
       "revision": "2026-11-11",
       "bytes": 204338813,
