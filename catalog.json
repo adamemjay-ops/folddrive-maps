@@ -98,6 +98,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-puglia-43066195902-1/puglia.fdmap"
     },
     {
+      "name": "Toscana",
+      "revision": "2026-11-11",
+      "bytes": 402305209,
+      "release": "2430e3714ee66524a55992302cdf2e7df87026fd6936fb56b6b47ba91c47c68c",
+      "sha256": "17f99900db4637be634f0b533c8fc92cab93f2f726e877dad3e949c2a09b67f8",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-toscana-43066195902-1/toscana.fdmap"
+    },
+    {
       "name": "Trentino-Alto Adige",
       "revision": "2026-11-11",
       "bytes": 204338813,
