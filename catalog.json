@@ -2,6 +2,14 @@
   "format": 1,
   "zones": [
     {
+      "name": "Basilicata",
+      "revision": "2026-11-11",
+      "bytes": 79546740,
+      "release": "b7dfca3f83e4467afc187b7af5959948b9630b545663d5b075ac20d337f0eabc",
+      "sha256": "bc2fab237f3078be9cb662a7416246451ca9920b23b17e49442619ceaa2581be",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-basilicata-43066195902-1/basilicata.fdmap"
+    },
+    {
       "name": "Friuli-Venezia Giulia",
       "revision": "2026-11-11",
       "bytes": 184076231,
