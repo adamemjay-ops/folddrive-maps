@@ -74,6 +74,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-liguria-43066195902-1/liguria.fdmap"
     },
     {
+      "name": "Lombardia",
+      "revision": "2026-11-11",
+      "bytes": 605595832,
+      "release": "852d7bd8193e57b710671c91512001003cd0fac62a2cbd31b2b8d1ab3ef9caff",
+      "sha256": "38ca5e4c67f6f391a74e6887c11c0a7d934e0659a50aef3fd5f916e5e789edf7",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-lombardia-43066195902-1/lombardia.fdmap"
+    },
+    {
       "name": "Marche",
       "revision": "2026-11-11",
       "bytes": 133684381,
