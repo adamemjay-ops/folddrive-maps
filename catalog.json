@@ -2,6 +2,14 @@
   "format": 1,
   "zones": [
     {
+      "name": "Abruzzo",
+      "revision": "2026-11-11",
+      "bytes": 177119666,
+      "release": "79c9b9d0c426ea59bd418587c83217bf02577e7d39be03521bcb42530075e494",
+      "sha256": "107a3e941e3c1fc1de3ca0ad8e48b2bf5a68cae0e7078588f667d2bd1f6b8b0a",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-abruzzo-43066195902-1/abruzzo.fdmap"
+    },
+    {
       "name": "Basilicata",
       "revision": "2026-11-11",
       "bytes": 79546740,
