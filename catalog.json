@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "zones": [
+    {
+      "name": "Friuli-Venezia Giulia",
+      "revision": "2026-11-11",
+      "bytes": 184076231,
+      "release": "667837d329d072ad9ea2e87970b97aca5de45801ce899121b0b8c18c89036707",
+      "sha256": "d9833dc006e82897f2b1fb20d375603b9ce404d1289de6b3f8b720507ff78587",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_venezia_giulia-43039274223-1/friuli_venezia_giulia.fdmap"
+    }
+  ]
+}
