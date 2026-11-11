@@ -50,6 +50,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_veneto-43058005786-1/friuli_veneto.fdmap"
     },
     {
+      "name": "Marche",
+      "revision": "2026-11-11",
+      "bytes": 133684381,
+      "release": "d9b1c9ee2f1ef1fc4b95e587198c71c5f8eb324e62d3eb1991362ab0e5c81c5f",
+      "sha256": "5cabb450d70c8ff64445925744fe20c433e6addc88e34287f3070d61268068c1",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-marche-43066195902-1/marche.fdmap"
+    },
+    {
       "name": "Molise",
       "revision": "2026-11-11",
       "bytes": 46881015,
