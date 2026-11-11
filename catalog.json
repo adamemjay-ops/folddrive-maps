@@ -50,6 +50,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-trentino_alto_adige-43039274223-1/trentino_alto_adige.fdmap"
     },
     {
+      "name": "Umbria",
+      "revision": "2026-11-11",
+      "bytes": 92900066,
+      "release": "cdb5ea87ce0cd1847052e72086e5bef3d4ead17eef03d235b019180f72ff756b",
+      "sha256": "cf4b2a5265751ff325bcdcfe5cd11da379d53c8a5f10aa1f9f22762471232f19",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-umbria-43066195902-1/umbria.fdmap"
+    },
+    {
       "name": "Valle d’Aosta",
       "revision": "2026-11-11",
       "bytes": 36115403,
