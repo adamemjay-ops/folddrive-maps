@@ -18,6 +18,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_veneto-43058005786-1/friuli_veneto.fdmap"
     },
     {
+      "name": "Molise",
+      "revision": "2026-11-11",
+      "bytes": 46881015,
+      "release": "c3f6c85164cfc0726cd51e189b9efba17a044569cd6894941c00b3452bafbc9b",
+      "sha256": "21412bf385b747f2b932d8eb49c94af633af22d89e3d45ec8ecccf11ef45c87b",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-molise-43066195902-1/molise.fdmap"
+    },
+    {
       "name": "Trentino-Alto Adige",
       "revision": "2026-11-11",
       "bytes": 204338813,
