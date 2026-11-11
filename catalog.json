@@ -98,6 +98,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-puglia-43066195902-1/puglia.fdmap"
     },
     {
+      "name": "Sardegna",
+      "revision": "2026-11-11",
+      "bytes": 218479616,
+      "release": "bee0f8980d2fb4f427d289a3f5053febb417cbb15d75aeb1e1f9f6fd5b31c433",
+      "sha256": "e493da35ce9cd1bf429400b435bb4a7a7462e199e9f5a260a53eae24b1ab6d1e",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-sardegna-43066195902-1/sardegna.fdmap"
+    },
+    {
       "name": "Toscana",
       "revision": "2026-11-11",
       "bytes": 402305209,
