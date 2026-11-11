@@ -10,6 +10,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_venezia_giulia-43039274223-1/friuli_venezia_giulia.fdmap"
     },
     {
+      "name": "Friuli-Venezia Giulia + Veneto",
+      "revision": "2026-11-11",
+      "bytes": 514109753,
+      "release": "be16a2b768c8c1fc273f4232b379e762384eaa8bbfd21029f40572988ee05904",
+      "sha256": "d3a03cfd9fca87bb129a3641f16088253999dd967a689892d800350c4bbba691",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_veneto-43058005786-1/friuli_veneto.fdmap"
+    },
+    {
       "name": "Trentino-Alto Adige",
       "revision": "2026-11-11",
       "bytes": 204338813,
