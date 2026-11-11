@@ -19,7 +19,7 @@ jobs:
     env:
       ZONE: ${{ matrix.zone }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build offline map and verify routes
         run: |
           mkdir -p output
@@ -122,7 +122,7 @@ jobs:
                           json.dump(row,stream,ensure_ascii=False,separators=(",",":"))
                       stream.write("]")
               subprocess.run(["ogr2ogr","-f","PMTiles","map.pmtiles","features.geojsonl","-nln","features",
-                              "-s_srs","EPSG:4326","-dsco","MINZOOM=7","-dsco","MAXZOOM=15"],check=True)
+                              "-dsco","MINZOOM=7","-dsco","MAXZOOM=15"],check=True)
               (work/"features.geojsonl").unlink()
               (work/"places.sqlite").unlink()
               graph = work/"graph"
