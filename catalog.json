@@ -58,6 +58,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_veneto-43058005786-1/friuli_veneto.fdmap"
     },
     {
+      "name": "Liguria",
+      "revision": "2026-11-11",
+      "bytes": 154657090,
+      "release": "14572478016d2773161d97b51f9ffbb69eca9f23db8b7ed2197bf17c91a99e87",
+      "sha256": "08faf410307f726629798d7d95da76103f355a2436fc29e9a925873f20f565f0",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-liguria-43066195902-1/liguria.fdmap"
+    },
+    {
       "name": "Marche",
       "revision": "2026-11-11",
       "bytes": 133684381,
