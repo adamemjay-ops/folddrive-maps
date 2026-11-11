@@ -98,6 +98,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-molise-43066195902-1/molise.fdmap"
     },
     {
+      "name": "Piemonte",
+      "revision": "2026-11-11",
+      "bytes": 456194254,
+      "release": "f2a298f486347e92378005cb017e4b062db99ae60ef96dc77c889de8bea8142d",
+      "sha256": "1ab49521ae0038aac4dc798b33fbf16fa0682a1705cca3037f98ba07533c6192",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-piemonte-43066195902-1/piemonte.fdmap"
+    },
+    {
       "name": "Puglia",
       "revision": "2026-11-11",
       "bytes": 271874673,
