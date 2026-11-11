@@ -16,6 +16,14 @@
       "release": "fb7f2e9e0e7da593bdc0269bfcccec187c95d946169b1fc416622ee43e71f867",
       "sha256": "4ea8dbf086708d048c667e1068b6c2484a8c62569ebe6ce944923ab8b91c96ce",
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-trentino_alto_adige-43039274223-1/trentino_alto_adige.fdmap"
+    },
+    {
+      "name": "Veneto",
+      "revision": "2026-11-11",
+      "bytes": 487103226,
+      "release": "315b15ff99091f80c01b580f1c64a03a8d189d57f1c9d4b0fb8c8166451e5f60",
+      "sha256": "232f10229af879d6cf343d7a15ea010d598b8dcd23f106ef810c2023e81e70fe",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-veneto-43039274223-1/veneto.fdmap"
     }
   ]
 }
