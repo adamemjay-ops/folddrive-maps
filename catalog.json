@@ -26,6 +26,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-trentino_alto_adige-43039274223-1/trentino_alto_adige.fdmap"
     },
     {
+      "name": "Valle d’Aosta",
+      "revision": "2026-11-11",
+      "bytes": 36115403,
+      "release": "62441aaaa2cd90f20275a3c7cd84c5a69e5e3308a847a4b2e8e9b389fb24be9c",
+      "sha256": "d29817aea1f5f44a6fc730f087446ba005d3d167c8056cc73e1d0dca98090ca3",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-valle_aosta-43066195902-1/valle_aosta.fdmap"
+    },
+    {
       "name": "Veneto",
       "revision": "2026-11-11",
       "bytes": 487103226,
