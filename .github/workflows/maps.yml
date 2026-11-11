@@ -1,0 +1,222 @@
+name: Mappe regionali
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/maps.yml']
+permissions:
+  contents: write
+concurrency:
+  group: publish-regions
+  cancel-in-progress: false
+jobs:
+  region:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        zone: [friuli_venezia_giulia, veneto, trentino_alto_adige]
+    env:
+      ZONE: ${{ matrix.zone }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build offline map and verify routes
+        run: |
+          mkdir -p output
+          cat > build_fvg.py <<'PYTHON'
+          """Create and route-test an offline Friuli-Venezia Giulia pack (Linux container)."""
+          import datetime
+          import hashlib
+          import json
+          import math
+          import os
+          from pathlib import Path
+          import shutil
+          import sqlite3
+          import subprocess
+          import tempfile
+          import urllib.request
+          import zipfile
+
+          import osmium
+          import valhalla
+
+          ZONES = {
+              "friuli_venezia_giulia": ("Friuli-Venezia Giulia", (45.909,13.518), [(45.942,13.621),(46.063,13.235),(45.653,13.777)]),
+              "veneto": ("Veneto", (45.409,11.879), [(45.549,11.547),(45.673,12.241)]),
+              "trentino_alto_adige": ("Trentino-Alto Adige", (46.067,11.121), [(46.496,11.352),(45.891,11.042)]),
+          }
+          slug = os.environ.get("ZONE", "friuli_venezia_giulia")
+          name, origin, destinations = ZONES[slug]
+          BASE = "https://download.openstreetmap.fr/extracts/europe/italy/" + slug
+          OUT = Path("/output")
+
+
+          def digest(path, algorithm="sha256"):
+              with path.open("rb") as handle:
+                  return hashlib.file_digest(handle, algorithm).hexdigest()
+
+
+          class Cartography(osmium.SimpleHandler):
+              def __init__(self, features, db):
+                  super().__init__()
+                  self.features = features
+                  self.db = db
+                  self.bounds = [180., 90., -180., -90.]
+
+              def place(self, tags, lon, lat):
+                  address = " ".join(filter(None, (tags.get("addr:street"), tags.get("addr:housenumber"))))
+                  for term in [tags.get("name"), address]:
+                      if term:
+                          city = tags.get("addr:city")
+                          label = f"{term}, {city}" if city and city != term else term
+                          self.db.execute("INSERT OR IGNORE INTO places VALUES(?,?,?,?,?)",
+                                          (label, round(lon*200), round(lat*200), lon, lat))
+
+              def node(self, node):
+                  if node.location.valid():
+                      x, y = node.location.lon, node.location.lat
+                      self.bounds = [min(self.bounds[0], x), min(self.bounds[1], y),
+                                     max(self.bounds[2], x), max(self.bounds[3], y)]
+                      if node.tags:
+                          self.place(node.tags, x, y)
+
+              def way(self, way):
+                  tags = way.tags
+                  if tags.get("highway"):
+                      kind = "road"
+                  elif tags.get("waterway"):
+                      kind = "river"
+                  elif tags.get("natural") == "water":
+                      kind = "water"
+                  elif tags.get("building"):
+                      kind = "building"
+                  elif tags.get("landuse") or tags.get("leisure"):
+                      kind = "land"
+                  elif tags.get("name") or tags.get("addr:street"):
+                      kind = None
+                  else:
+                      return
+                  coords = [[n.location.lon,n.location.lat] for n in way.nodes if n.location.valid()]
+                  if len(coords) < 2:
+                      return
+                  self.place(tags,*coords[len(coords)//2])
+                  polygon = kind in ("water","building","land")
+                  if not kind or (polygon and (len(coords)<4 or coords[0]!=coords[-1])):
+                      return
+                  feature = dict(type="Feature",properties=dict(kind=kind,name=tags.get("name","")),
+                                 geometry=dict(type="Polygon" if polygon else "LineString",
+                                               coordinates=[coords] if polygon else coords))
+                  self.features.write(json.dumps(feature, ensure_ascii=False, separators=(",",":"))+"\n")
+
+
+          def build(source, work):
+              with sqlite3.connect(work/"places.sqlite") as db, (work/"features.geojsonl").open("w") as features:
+                  db.execute("CREATE TABLE places(name TEXT, x INTEGER, y INTEGER, lon REAL, lat REAL, UNIQUE(name,x,y))")
+                  cart = Cartography(features, db)
+                  cart.apply_file(str(source), locations=True, idx="sparse_mem_array")
+                  with (work/"places.json").open("w") as stream:
+                      stream.write("[")
+                      for i, row in enumerate(db.execute("SELECT name,lon,lat FROM places ORDER BY name")):
+                          if i: stream.write(",")
+                          json.dump(row,stream,ensure_ascii=False,separators=(",",":"))
+                      stream.write("]")
+              subprocess.run(["ogr2ogr","-f","PMTiles","map.pmtiles","features.geojsonl","-nln","features",
+                              "-s_srs","EPSG:4326","-dsco","MINZOOM=7","-dsco","MAXZOOM=15"],check=True)
+              (work/"features.geojsonl").unlink()
+              (work/"places.sqlite").unlink()
+              graph = work/"graph"
+              graph.mkdir()
+              cfg = valhalla.get_config("",str(graph))
+              cfg["mjolnir"]["tile_extract"] = str(work/"graph.tar")
+              cfg["mjolnir"]["tile_dir"] = str(graph)
+              Path("config.json").write_text(json.dumps(cfg))
+              subprocess.run([str(valhalla.PYVALHALLA_DIR/"bin/valhalla_build_tiles"),"-j","2","-c","config.json",str(source)],check=True)
+              subprocess.run(["valhalla_build_extract","-c","config.json"],check=True)
+              cfg["mjolnir"].pop("tile_url",None)
+              cfg["mjolnir"]["tile_dir"]=str(work/"no_loose_tiles")
+              actor=valhalla.Actor(cfg)
+              for dest in destinations:
+                  trip=actor.route(dict(costing="auto",language="it-IT",locations=[
+                      dict(lat=origin[0],lon=origin[1]),dict(lat=dest[0],lon=dest[1])]))["trip"]
+                  if not trip["legs"][0]["maneuvers"] or trip["summary"]["length"]<5:
+                      raise ValueError(f"Route verification failed: {dest}")
+                  print(origin,"->",dest,trip["summary"]["length"],"km",flush=True)
+              names=["graph.tar","map.pmtiles","places.json"]
+              sizes=[Path(n).stat().st_size for n in names]
+              if sizes[2]>128<<20 or max(sizes[:2])>2<<30 or sum(sizes)>4<<30:
+                  raise ValueError("Pacchetto oltre i limiti Android")
+              with open("map.pmtiles","rb") as f:
+                  if f.read(8)!=b"PMTiles\x03":raise ValueError("Invalid PMTiles")
+              meta=dict(format=1,name=name,revision=datetime.date.today().isoformat(),
+                        bounds=cart.bounds,sha256={n:digest(Path(n)) for n in names},
+                        source=BASE+"-latest.osm.pbf",source_sha256=digest(source),
+                        attribution="© OpenStreetMap contributors",license="ODbL 1.0",
+                        license_url="https://opendatacommons.org/licenses/odbl/1-0/")
+              with tempfile.NamedTemporaryFile(dir=OUT,suffix=".part",delete=False) as staged:
+                  temp=Path(staged.name)
+              try:
+                  with zipfile.ZipFile(temp,"w",zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
+                      archive.writestr("region.json",json.dumps(meta,ensure_ascii=False))
+                      for member in names:archive.write(member)
+                  with zipfile.ZipFile(temp) as archive:
+                      if archive.testzip():raise ValueError("Archive verification failed")
+                  temp.replace(OUT/(slug+".fdmap"))
+              finally:temp.unlink(missing_ok=True)
+
+
+          if __name__=="__main__":
+              with tempfile.TemporaryDirectory() as tmp:
+                  work=Path(tmp);os.chdir(work);source=work/"region.osm.pbf"
+                  print("Scarico l'estratto regionale OpenStreetMap...",flush=True)
+                  subprocess.run(["curl","--fail","--location","--retry","4","-o",str(source),BASE+"-latest.osm.pbf"],check=True)
+                  with urllib.request.urlopen(BASE+".osm.pbf.md5",timeout=30) as response:
+                      expected=response.read(256).decode().split()[0]
+                  if digest(source,"md5")!=expected:raise ValueError("Download incompleto o estratto in aggiornamento")
+                  build(source,work)
+
+          PYTHON
+          cat > Dockerfile <<'DOCKER'
+          FROM python:3.12-slim-trixie
+          RUN apt-get update && apt-get install -y --no-install-recommends gdal-bin ca-certificates curl && rm -rf /var/lib/apt/lists/*
+          RUN pip install --no-cache-dir pyvalhalla==3.9.1 osmium && ogrinfo --formats | grep PMTiles && valhalla_build_extract --help >/dev/null
+          COPY build_fvg.py /opt/build_fvg.py
+          ENV PYTHONUNBUFFERED=1
+          CMD ["python","/opt/build_fvg.py"]
+
+          DOCKER
+          docker build -t folddrive-builder .
+          docker run --rm -e ZONE -v "$PWD/output:/output" folddrive-builder
+      - name: Publish verified package and update catalogue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="map-$ZONE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          pack="output/$ZONE.fdmap"
+          gh release create "$tag" "$pack" --title "FoldDrive · $ZONE" --notes "© OpenStreetMap contributors · ODbL 1.0 · https://www.openstreetmap.org/copyright"
+          export ASSET_URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$ZONE.fdmap"
+          python - <<'PYTHON'
+          import os, hashlib, json, zipfile, pathlib
+          path = pathlib.Path("output", os.environ["ZONE"] + ".fdmap")
+          with zipfile.ZipFile(path) as archive:
+              manifest = archive.read("region.json")
+              meta = json.loads(manifest)
+          with path.open("rb") as stream:
+              digest = hashlib.file_digest(stream, "sha256").hexdigest()
+          row = dict(name=meta["name"], revision=meta["revision"], bytes=path.stat().st_size, release=hashlib.sha256(manifest).hexdigest(), sha256=digest, url=os.environ["ASSET_URL"])
+          pathlib.Path("/tmp/zone.json").write_text(json.dumps(row,ensure_ascii=False))
+          PYTHON
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            test -f catalog.json || echo '{"format":1,"zones":[]}' > catalog.json
+            jq --slurpfile row /tmp/zone.json '.zones = ([.zones[] | select(.name != $row[0].name)] + $row | sort_by(.name))' catalog.json > next.json
+            mv next.json catalog.json
+            git add catalog.json
+            git commit -m "Publish $ZONE ($GITHUB_RUN_ID)"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep "$attempt"
+          done
+          exit 1
