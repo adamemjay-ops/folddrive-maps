@@ -10,6 +10,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-basilicata-43066195902-1/basilicata.fdmap"
     },
     {
+      "name": "Calabria",
+      "revision": "2026-11-11",
+      "bytes": 136394221,
+      "release": "82d4b5333688b77c47acfec49f187bc25431f055e182a78509112e0ae2f3db44",
+      "sha256": "91e0735b6d209ab4b7c88c9ac2b621420564639299b2e34eaa397a6e18bd025f",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-calabria-43066195902-1/calabria.fdmap"
+    },
+    {
       "name": "Friuli-Venezia Giulia",
       "revision": "2026-11-11",
       "bytes": 184076231,
