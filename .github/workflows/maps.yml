@@ -7,7 +7,7 @@ permissions:
   contents: write
 concurrency:
   group: publish-regions
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   region:
     runs-on: ubuntu-24.04
@@ -193,6 +193,7 @@ jobs:
         run: |
           tag="map-$ZONE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           pack="output/$ZONE.fdmap"
+          sudo chmod a+r "$pack"
           gh release create "$tag" "$pack" --title "FoldDrive · $ZONE" --notes "© OpenStreetMap contributors · ODbL 1.0 · https://www.openstreetmap.org/copyright"
           export ASSET_URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$ZONE.fdmap"
           python - <<'PYTHON'
