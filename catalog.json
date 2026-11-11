@@ -34,6 +34,14 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-campania-43066195902-1/campania.fdmap"
     },
     {
+      "name": "Emilia-Romagna",
+      "revision": "2026-11-11",
+      "bytes": 398093183,
+      "release": "e8833b3360992d3e0a17a047b0490ba56afb46bd330f21f3337974faee7ffeeb",
+      "sha256": "1a3c0f7da1db86dd95387663c15c431f1859f3f24f8918f540de256335baf3ea",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-emilia_romagna-43066195902-1/emilia_romagna.fdmap"
+    },
+    {
       "name": "Friuli-Venezia Giulia",
       "revision": "2026-11-11",
       "bytes": 184076231,
