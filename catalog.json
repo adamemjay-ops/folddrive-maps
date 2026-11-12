@@ -352,6 +352,20 @@
       "atlas": "iceland"
     },
     {
+      "continent": "EU",
+      "country": "XK",
+      "name": "Kosovo · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 48115454,
+      "sha256": "29aa9ced1e89fc4fe5b1f649cf9e75c2135b4facf324a93eff57762562f76a8c",
+      "release": "97bbad595eed71647792b44bd8d173afccc4c73ccf4c4d4bef6afbccb4459e31",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-kosovo-43257908066-1/kosovo.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-kosovo-43257908066-1/kosovo.json",
+      "detail_bytes": 3923774,
+      "detail_sha256": "6151602ba5387d2bc78dfe74cbc053f33a23fc9e8608615648c0406ff3e31dcc",
+      "atlas": "kosovo"
+    },
+    {
       "name": "Lazio",
       "revision": "2026-11-11",
       "bytes": 246632197,
