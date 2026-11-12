@@ -1,0 +1,311 @@
+name: Europa · pacchetti nazionali offline
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/europe.yml']
+permissions:
+  contents: write
+concurrency:
+  group: europe-map
+  cancel-in-progress: false
+jobs:
+  region:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        zone: [slovenia]
+    env:
+      ZONE: ${{ matrix.zone }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build offline map and verify routes
+        run: |
+          mkdir -p output
+          cat > build_fvg.py <<'PYTHON'
+          """Create and route-test an offline Friuli-Venezia Giulia pack (Linux container)."""
+          import datetime
+          import hashlib
+          import json
+          import math
+          import os
+          from pathlib import Path
+          import shutil
+          import sqlite3
+          import subprocess
+          import tempfile
+          import urllib.request
+          import zipfile
+
+          import osmium
+          import valhalla
+
+          COUNTRIES = {
+              "slovenia": dict(name="Slovenia", iso="SI", sources=[
+                  ("slovenia","https://download.geofabrik.de/europe/slovenia-latest.osm.pbf"),
+                  ("friuli","https://download.openstreetmap.fr/extracts/europe/italy/friuli_venezia_giulia-latest.osm.pbf")
+              ], routes=[
+                  ((45.909,13.518),(45.956,13.648)),  # Farra - Nova Gorica
+                  ((45.909,13.518),(46.050,14.505)),  # Farra - Ljubljana
+                  ((45.548,13.731),(46.554,15.646)),  # Koper - Maribor
+                  ((46.554,15.646),(46.662,16.165)),  # Maribor - Murska Sobota
+              ])
+          }
+          slug = os.environ["ZONE"]
+          country = COUNTRIES[slug]
+          name = country["name"]
+          OUT = Path("/output")
+
+
+          def digest(path, algorithm="sha256"):
+              with path.open("rb") as handle:
+                  return hashlib.file_digest(handle, algorithm).hexdigest()
+
+
+          class Cartography(osmium.SimpleHandler):
+              def __init__(self, features, db):
+                  super().__init__()
+                  self.features = features
+                  self.db = db
+                  self.bounds = [180., 90., -180., -90.]
+
+              def place(self, tags, lon, lat):
+                  address = " ".join(filter(None, (tags.get("addr:street"), tags.get("addr:housenumber"))))
+                  for term in [tags.get("name"), address]:
+                      if term:
+                          city = tags.get("addr:city")
+                          label = f"{term}, {city}" if city and city != term else term
+                          self.db.execute("INSERT OR IGNORE INTO places VALUES(?,?,?,?,?)",
+                                          (label, round(lon*200), round(lat*200), lon, lat))
+
+              def node(self, node):
+                  if node.location.valid():
+                      x, y = node.location.lon, node.location.lat
+                      self.bounds = [min(self.bounds[0], x), min(self.bounds[1], y),
+                                     max(self.bounds[2], x), max(self.bounds[3], y)]
+                      if node.tags:
+                          self.place(node.tags, x, y)
+
+              def way(self, way):
+                  tags = way.tags
+                  if tags.get("highway"):
+                      kind = "road"
+                  elif tags.get("waterway"):
+                      kind = "river"
+                  elif tags.get("natural") == "water":
+                      kind = "water"
+                  elif tags.get("building"):
+                      kind = None
+                  elif tags.get("landuse") or tags.get("leisure"):
+                      kind = "land"
+                  elif tags.get("name") or tags.get("addr:street"):
+                      kind = None
+                  else:
+                      return
+                  coords = [[n.location.lon,n.location.lat] for n in way.nodes if n.location.valid()]
+                  if len(coords) < 2:
+                      return
+                  self.place(tags,*coords[len(coords)//2])
+                  polygon = kind in ("water","building","land")
+                  if not kind or (polygon and (len(coords)<4 or coords[0]!=coords[-1])):
+                      return
+                  feature = dict(type="Feature",properties=dict(kind=kind,name=tags.get("name","")),
+                                 geometry=dict(type="Polygon" if polygon else "LineString",
+                                               coordinates=[coords] if polygon else coords))
+                  self.features.write(json.dumps(feature, ensure_ascii=False, separators=(",",":"))+"\n")
+
+
+          def build(source, work):
+              with sqlite3.connect(work/"places.sqlite") as db, (work/"features.geojsonl").open("w") as features:
+                  db.execute("CREATE TABLE places(name TEXT, x INTEGER, y INTEGER, lon REAL, lat REAL, UNIQUE(name,x,y))")
+                  cart = Cartography(features, db)
+                  cart.apply_file(str(source), locations=True, idx="sparse_mem_array")
+                  with (work/"places.json").open("w") as stream:
+                      stream.write("[")
+                      for i, row in enumerate(db.execute("SELECT name,lon,lat FROM places ORDER BY name")):
+                          if i: stream.write(",")
+                          json.dump(row,stream,ensure_ascii=False,separators=(",",":"))
+                      stream.write("]")
+              subprocess.run(["ogr2ogr","-f","PMTiles","map.pmtiles","features.geojsonl","-nln","features",
+                              "-dsco","MINZOOM=7","-dsco","MAXZOOM=14"],check=True)
+              (work/"features.geojsonl").unlink()
+              (work/"places.sqlite").unlink()
+              graph = work/"graph"
+              graph.mkdir()
+              cfg = valhalla.get_config("",str(graph))
+              cfg["mjolnir"]["tile_extract"] = str(work/"graph.tar")
+              cfg["mjolnir"]["tile_dir"] = str(graph)
+              Path("config.json").write_text(json.dumps(cfg))
+              subprocess.run([str(valhalla.PYVALHALLA_DIR/"bin/valhalla_build_tiles"),"-j","2","-c","config.json",str(source)],check=True)
+              subprocess.run(["valhalla_build_extract","-c","config.json"],check=True)
+              cfg["mjolnir"].pop("tile_url",None)
+              cfg["mjolnir"]["tile_dir"]=str(work/"no_loose_tiles")
+              actor=valhalla.Actor(cfg)
+              for start,dest in [pair for a,b in country["routes"] for pair in [(a,b),(b,a)]]:
+                  trip=actor.route(dict(costing="auto",language="it-IT",locations=[
+                      dict(lat=start[0],lon=start[1]),dict(lat=dest[0],lon=dest[1])]))["trip"]
+                  if not trip["legs"][0]["maneuvers"] or trip["summary"]["length"]<5:
+                      raise ValueError(f"Route verification failed: {dest}")
+                  print(start,"->",dest,trip["summary"]["length"],"km",flush=True)
+              names=["graph.tar","map.pmtiles","places.json"]
+              sizes=[Path(n).stat().st_size for n in names]
+              if sizes[2]>128<<20 or max(sizes[:2])>2<<30 or sum(sizes)>4<<30:
+                  raise ValueError("Pacchetto oltre i limiti Android")
+              with open("map.pmtiles","rb") as f:
+                  if f.read(8)!=b"PMTiles\x03":raise ValueError("Invalid PMTiles")
+              meta=dict(format=1,name=name,revision=datetime.date.today().isoformat(),
+                        bounds=cart.bounds,sha256={n:digest(Path(n)) for n in names},
+                        country=country["iso"],continent="EU",source=[url for _,url in country["sources"]],source_sha256=digest(source),
+                        attribution="© OpenStreetMap contributors",license="ODbL 1.0",
+                        license_url="https://opendatacommons.org/licenses/odbl/1-0/")
+              with tempfile.NamedTemporaryFile(dir=OUT,suffix=".part",delete=False) as staged:
+                  temp=Path(staged.name)
+              try:
+                  with zipfile.ZipFile(temp,"w",zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
+                      archive.writestr("region.json",json.dumps(meta,ensure_ascii=False))
+                      for member in names:archive.write(member)
+                  with zipfile.ZipFile(temp) as archive:
+                      if archive.testzip():raise ValueError("Archive verification failed")
+                  temp.replace(OUT/(slug+".fdmap"))
+              finally:temp.unlink(missing_ok=True)
+
+
+          if __name__=="__main__":
+              with tempfile.TemporaryDirectory() as tmp:
+                  work=Path(tmp);os.chdir(work);source=work/"region.osm.pbf"
+                  print("Scarico l'estratto regionale OpenStreetMap...",flush=True)
+                  parts = []
+                  for region,url in country["sources"]:
+                      part = work/(region+".osm.pbf")
+                      subprocess.run(["curl","-fL","--retry","4","-o",str(part),url],check=True)
+                      checksum = url+".md5" if "geofabrik.de" in url else url.replace("-latest.osm.pbf",".osm.pbf.md5")
+                      with urllib.request.urlopen(checksum,timeout=60) as response:
+                          expected = response.read(256).decode().split()[0]
+                      if digest(part,"md5") != expected: raise ValueError("Invalid extract: "+region)
+                      parts.append(str(part))
+                  subprocess.run(["osmium","merge",*parts,"-o","all.osh.pbf"],check=True)
+                  subprocess.run(["osmium","time-filter","all.osh.pbf", "-o",str(source)],check=True)
+                  subprocess.run(["python","/opt/drive_detail.py",str(source),"/output/detail"],check=True)
+                  build(source,work)
+
+          PYTHON
+          cat > drive_detail.py <<'PYDETAIL'
+          """Build FoldDrive's regional display and stop index from the same OSM extract."""
+          import argparse, json, pathlib, subprocess, tempfile
+          import osmium
+
+          categories={'fuel':'fuel','charging_station':'charge','parking':'parking','restaurant':'food',
+                      'fast_food':'food','pharmacy':'pharmacy','hospital':'hospital','museum':'visit',
+                      'attraction':'visit','viewpoint':'visit'}
+          symbols={'fuel':'Carburante','charge':'Ricarica','parking':'P','food':'Ristorante','pharmacy':'Farmacia',
+                   'hospital':'Ospedale','visit':'Visita'}
+          roads={'motorway','trunk','primary','secondary','tertiary'}
+
+          class Detail(osmium.SimpleHandler):
+              def __init__(self,stream):
+                  super().__init__()
+                  self.stream=stream
+                  self.pois=[]
+                  self.seen=set()
+                  self.junctions={}
+                  self.roads={}
+              def feature(self,kind,name,shape,coords):
+                  data=dict(type='Feature',properties=dict(kind=kind,name=name),geometry=dict(type=shape,coordinates=coords))
+                  self.stream.write(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n')
+              def poi(self,t,x,y):
+                  kind=categories.get(t.get('amenity')) or categories.get(t.get('tourism'))
+                  if not kind or t.get('access') in ('private','no'):return
+                  name=t.get('name') or t.get('brand') or t.get('operator') or symbols[kind]
+                  key=(kind,name,round(x,4),round(y,4))
+                  if key in self.seen:return
+                  self.seen.add(key)
+                  self.pois.append([kind,name,round(y,6),round(x,6),t.get('opening_hours',''),t.get('addr:street','')])
+                  self.feature(kind,name,'Point',[x,y])
+              def node(self,n):
+                  if not n.tags or not n.location.valid():return
+                  x,y=n.location.lon,n.location.lat
+                  if n.tags.get('highway')=='motorway_junction' and n.tags.get('name'):
+                      self.junctions[n.id]=[n.tags.get('name'),round(y,6),round(x,6)]
+                  self.poi(n.tags,x,y)
+                  if n.tags.get('place') in ('city','town','village') and n.tags.get('name'):
+                      self.feature('town',n.tags['name'],'Point',[x,y])
+              def way(self,w):
+                  t=w.tags
+                  road=(t.get('highway') or '').removesuffix('_link')
+                  if road not in roads and t.get('amenity') not in categories and t.get('tourism') not in categories:return
+                  if road in ('motorway','trunk','primary') and t.get('ref'):
+                      for n in w.nodes:
+                          if n.ref in self.junctions:self.roads.setdefault(n.ref,set()).update(t.get('ref').split(';'))
+                  coords=[(n.lon,n.lat) for n in w.nodes if n.location.valid()]
+                  if not coords:return
+                  if road in roads and len(coords)>1:self.feature(road,t.get('name') or t.get('ref',''),'LineString',coords)
+                  p=coords[:-1] if len(coords)>1 and coords[0]==coords[-1] else coords
+                  self.poi(t,sum(x for x,y in p)/len(p),sum(y for x,y in p)/len(p))
+
+          def main():
+              ap=argparse.ArgumentParser();ap.add_argument('source');ap.add_argument('out',type=pathlib.Path)
+              a=ap.parse_args();a.out.mkdir(parents=True,exist_ok=True)
+              with tempfile.TemporaryDirectory() as tmp:
+                  source=pathlib.Path(tmp)/'features.geojsonl'
+                  with source.open('w') as f:
+                      scanner=Detail(f);scanner.apply_file(a.source,locations=True,idx='sparse_mem_array')
+                  exits=[v+[sorted(scanner.roads[k])] for k,v in scanner.junctions.items() if k in scanner.roads]
+                  (a.out/'junctions.json').write_text(json.dumps(exits,ensure_ascii=False,separators=(',',':')))
+                  (a.out/'poi-fvg.json').write_text(json.dumps(scanner.pois,ensure_ascii=False,separators=(',',':')))
+                  subprocess.run(['ogr2ogr','-f','PMTiles',str(a.out/'detail-fvg.pmtiles'),str(source),'-nln','detail',
+                      '-dsco','MINZOOM=8','-dsco','MAXZOOM=14'],check=True)
+                  print(len(scanner.pois),'points of interest',flush=True)
+          if __name__=='__main__':main()
+          PYDETAIL
+          cat > Dockerfile <<'DOCKER'
+          FROM python:3.12-slim-trixie
+          RUN apt-get update && apt-get install -y --no-install-recommends gdal-bin ca-certificates curl osmium-tool && rm -rf /var/lib/apt/lists/*
+          RUN pip install --no-cache-dir pyvalhalla==3.9.1 osmium && ogrinfo --formats | grep PMTiles && valhalla_build_extract --help >/dev/null
+          COPY build_fvg.py drive_detail.py /opt/
+          ENV PYTHONUNBUFFERED=1
+          CMD ["python","/opt/build_fvg.py"]
+
+          DOCKER
+          docker build -t folddrive-builder .
+          docker run --rm -e ZONE -v "$PWD/output:/output" folddrive-builder
+      - name: Publish verified package and update catalogue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="map-$ZONE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          pack="output/$ZONE.fdmap"
+          sudo chmod a+r "$pack"
+          cd output/detail
+          sudo mv poi-fvg.json poi.json
+          sudo mv detail-fvg.pmtiles detail.pmtiles
+          zip -q "../../$ZONE.zip" poi.json detail.pmtiles junctions.json
+          cd ../..
+          jq -n --arg sha "$(sha256sum "$ZONE.zip" | cut -d' ' -f1)" --argjson size "$(stat -c%s "$ZONE.zip")" '{sha256:$sha,bytes:$size}' > "$ZONE.json"
+          gh release create "$tag" "$pack" "$ZONE.zip" "$ZONE.json" --title "FoldDrive · $ZONE" --notes "© OpenStreetMap contributors · ODbL 1.0 · https://www.openstreetmap.org/copyright"
+          export ASSET_URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$ZONE.fdmap"
+          python - <<'PYTHON'
+          import os, hashlib, json, zipfile, pathlib
+          path = pathlib.Path("output", os.environ["ZONE"] + ".fdmap")
+          with zipfile.ZipFile(path) as archive:
+              manifest = archive.read("region.json")
+              meta = json.loads(manifest)
+          with path.open("rb") as stream:
+              digest = hashlib.file_digest(stream, "sha256").hexdigest()
+          row = dict(country=meta["country"],continent=meta["continent"],detail_url=os.environ["ASSET_URL"].rsplit("/",1)[0]+"/"+os.environ["ZONE"]+".json",name=meta["name"], revision=meta["revision"], bytes=path.stat().st_size, release=hashlib.sha256(manifest).hexdigest(), sha256=digest, url=os.environ["ASSET_URL"])
+          pathlib.Path("/tmp/zone.json").write_text(json.dumps(row,ensure_ascii=False))
+          PYTHON
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            test -f catalog.json || echo '{"format":1,"zones":[]}' > catalog.json
+            jq --slurpfile row /tmp/zone.json '.zones = ([.zones[] | select(.name != $row[0].name)] + $row | sort_by(.name))' catalog.json > next.json
+            mv next.json catalog.json
+            git add catalog.json
+            git commit -m "Publish $ZONE ($GITHUB_RUN_ID)"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep "$attempt"
+          done
+          exit 1
