@@ -546,6 +546,20 @@
       "atlas": "monaco"
     },
     {
+      "continent": "EU",
+      "country": "ME",
+      "name": "Montenegro · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 39815749,
+      "sha256": "c67bd9910eac50a057fea80db642d734b46f11e5c2849f29d3843e51cd98733e",
+      "release": "0f8913f57490c4f4a4bc2d1f7fc3a7b5c34e663585904613d08d3e8db48dab93",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-montenegro-43257908066-1/montenegro.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-montenegro-43257908066-1/montenegro.json",
+      "detail_bytes": 3181582,
+      "detail_sha256": "0969fdd4fe517e76c6c8d752079321c61795d7aad0da328e832e0ec0e50c3276",
+      "atlas": "montenegro"
+    },
+    {
       "name": "Piemonte",
       "revision": "2026-11-11",
       "bytes": 456194254,
