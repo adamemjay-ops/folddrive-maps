@@ -324,6 +324,20 @@
       "atlas": "guernsey-jersey"
     },
     {
+      "continent": "EU",
+      "country": "IS",
+      "name": "Iceland · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 94692652,
+      "sha256": "7278b0aedef78c4bf71a2f3055e3341f67942d7d18a641276e1c48b66175fcc1",
+      "release": "4a021982dd6b312fac91f99855e40845615e00504bf3f68340cf73367c7e1e92",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-iceland-43257908066-1/iceland.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-iceland-43257908066-1/iceland.json",
+      "detail_bytes": 6449573,
+      "detail_sha256": "fb829a06c5f142c82e5c7802af6751ae2d84e490f9757997432b554914b8a7c3",
+      "atlas": "iceland"
+    },
+    {
       "name": "Lazio",
       "revision": "2026-11-11",
       "bytes": 246632197,
