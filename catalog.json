@@ -88,6 +88,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-basilicata-43066195902-1/basilicata.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "BA",
+      "name": "Bosnia-Herzegovina · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 133482736,
+      "sha256": "cda0c6c6ca1d74de4400f29fd3448d475a8ffe45b1bd584e08b55ebf9c5e9f54",
+      "release": "f697371446f0f4698da96f95be871ccbd90ec29a60e34601208abee467230cbb",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-bosnia-herzegovina-43257908066-1/bosnia-herzegovina.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-bosnia-herzegovina-43257908066-1/bosnia-herzegovina.json",
+      "detail_bytes": 9597818,
+      "detail_sha256": "c81aaf4d9772f6d25b89d7e624e138d4af1d5bf5626ddb2276dcccef44e5f5b8",
+      "atlas": "bosnia-herzegovina"
+    },
+    {
       "name": "Calabria",
       "revision": "2026-11-11",
       "bytes": 136394221,
