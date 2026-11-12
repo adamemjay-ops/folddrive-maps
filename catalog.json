@@ -282,6 +282,20 @@
       "atlas": "georgia"
     },
     {
+      "continent": "EU",
+      "country": "GG",
+      "name": "Guernsey and Jersey · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 5276792,
+      "sha256": "44aea41b20553f50cf5a70a7cf91f50bc8f3795120c257d087f447cc77f10318",
+      "release": "4c8cf457d1f069723822e713b4cb0718f97050249ef56dc63168e581714e079a",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-guernsey-jersey-43257908066-1/guernsey-jersey.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-guernsey-jersey-43257908066-1/guernsey-jersey.json",
+      "detail_bytes": 547198,
+      "detail_sha256": "cc9f23616d4a324b969e06a93b0c916794e61c311cf31990a52d4ae23f6485ce",
+      "atlas": "guernsey-jersey"
+    },
+    {
       "name": "Lazio",
       "revision": "2026-11-11",
       "bytes": 246632197,
