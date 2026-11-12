@@ -89,6 +89,20 @@
     },
     {
       "continent": "EU",
+      "country": "BY",
+      "name": "Belarus · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 414029171,
+      "sha256": "b02ee003772c1739664e577af7cb5f895d0ca1ff911c7c4005eb31208d7beae7",
+      "release": "340a0780c36824482a4f34cbfa20eae72d41de6e10ca739d0e47ca79fc2fa171",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-belarus-43257908066-1/belarus.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-belarus-43257908066-1/belarus.json",
+      "detail_bytes": 32810022,
+      "detail_sha256": "4c0e7beaad3e5d3ecdd013e8c6ae21075afb8a249c4efd531478de7a87655c46",
+      "atlas": "belarus"
+    },
+    {
+      "continent": "EU",
       "country": "BA",
       "name": "Bosnia-Herzegovina · Atlas",
       "revision": "2026-11-12",
