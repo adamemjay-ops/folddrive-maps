@@ -1,0 +1,445 @@
+name: Atlante Europa offline
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/atlas-europe.yml']
+permissions:
+  contents: write
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        run: |
+          cat > plan.py <<'PLAN'
+          import json,urllib.request,os
+          from pathlib import Path
+          with urllib.request.urlopen('https://download.geofabrik.de/index-v1-nogeom.json',timeout=60) as r:
+              features=json.load(r)['features']
+          zones=[]
+          manual={'kosovo':'XK','ireland-and-northern-ireland':'IE','great-britain':'GB','guernsey-jersey':'GG','azores':'PT','turkey':'TR','georgia':'GE','armenia':'AM','azerbaijan':'AZ','russia':'RU'}
+          for feature in features:
+              p=feature['properties'];zone=p['id'];iso=p.get('iso3166-1:alpha2',[])
+              if p.get('parent')!='europe' and zone not in ('armenia','azerbaijan','georgia','turkey'):continue
+              if zone in ('britain-and-ireland','alps','dach'):continue
+              code=manual.get(zone) or (iso[0] if iso else '')
+              if not code:continue
+              zones.append(dict(zone=zone,iso=code,title=p['name'],url=p['urls']['pbf']))
+          if len(zones)<40 or not {'DE','FR','IT','SI','GB','ES'}<=set(z['iso'] for z in zones):raise RuntimeError('Incomplete source index: '+str(zones))
+          zones.sort(key=lambda z:(z['zone'] not in ('croatia','austria','liechtenstein','luxembourg','andorra'), z['zone']))
+          Path('plan.json').write_text(json.dumps(zones,ensure_ascii=False))
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:print('matrix='+json.dumps({'include':zones},separators=(',',':')),file=f)
+          PLAN
+          python plan.py
+  country:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      ZONE: ${{ matrix.zone }}
+      ISO: ${{ matrix.iso }}
+      TITLE: ${{ matrix.title }}
+      SOURCE: ${{ matrix.url }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Prepara la cartografia
+        run: |
+          cat > builder.py <<'BUILDER'
+          """Create and route-test an offline Friuli-Venezia Giulia pack (Linux container)."""
+          import datetime
+          import hashlib
+          import json
+          import math
+          import os
+          from pathlib import Path
+          import shutil
+          import sqlite3
+          import subprocess
+          import tempfile
+          import urllib.request
+          import zipfile
+
+          import osmium
+          import valhalla
+
+          slug = os.environ["ZONE"]
+          country = {"iso":os.environ["ISO"],"sources":[(slug,os.environ["SOURCE"])]}
+          name = os.environ["TITLE"]+" · Atlas"
+          OUT = Path("/output")
+          checkpoints=[]
+          road_samples=[]
+          def digest(path, algorithm="sha256"):
+              with path.open("rb") as handle:
+                  return hashlib.file_digest(handle, algorithm).hexdigest()
+
+
+          class Cartography(osmium.SimpleHandler):
+              def __init__(self, features, db):
+                  super().__init__()
+                  self.features = features
+                  self.db = db
+                  self.bounds = [180., 90., -180., -90.]
+
+              def place(self, tags, lon, lat):
+                  address = " ".join(filter(None, (tags.get("addr:street"), tags.get("addr:housenumber"))))
+                  for term in [tags.get("name"), address]:
+                      if term:
+                          city = tags.get("addr:city")
+                          label = f"{term}, {city}" if city and city != term else term
+                          self.db.execute("INSERT OR IGNORE INTO places VALUES(?,?,?,?,?)",
+                                          (label, round(lon*200), round(lat*200), lon, lat))
+
+              def node(self, node):
+                  if node.location.valid():
+                      x, y = node.location.lon, node.location.lat
+                      self.bounds = [min(self.bounds[0], x), min(self.bounds[1], y),
+                                     max(self.bounds[2], x), max(self.bounds[3], y)]
+                      if node.tags.get("place") in ("city","town","village","suburb") and node.tags.get("name"):
+                          checkpoints.append((y,x))
+                      if node.tags:
+                          self.place(node.tags, x, y)
+
+              def way(self, way):
+                  tags = way.tags
+                  if tags.get("highway"):
+                      kind = "road"
+                  elif tags.get("waterway"):
+                      kind = "river"
+                  elif tags.get("natural") == "water":
+                      kind = "water"
+                  elif tags.get("building"):
+                      kind = None
+                  elif tags.get("landuse") or tags.get("leisure"):
+                      kind = "land"
+                  elif tags.get("name") or tags.get("addr:street"):
+                      kind = None
+                  else:
+                      return
+                  coords = [[n.location.lon,n.location.lat] for n in way.nodes if n.location.valid()]
+                  if len(coords) < 2:
+                      return
+                  self.place(tags,*coords[len(coords)//2])
+                  if len(road_samples)<1200 and tags.get("highway") in ("primary","secondary","tertiary","residential") and tags.get("name"):
+                      point=coords[len(coords)//2]
+                      road_samples.append((point[1],point[0]))
+                  polygon = kind in ("water","building","land")
+                  if not kind or (polygon and (len(coords)<4 or coords[0]!=coords[-1])):
+                      return
+                  feature = dict(type="Feature",properties=dict(kind=kind,name=tags.get("name","")),
+                                 geometry=dict(type="Polygon" if polygon else "LineString",
+                                               coordinates=[coords] if polygon else coords))
+                  self.features.write(json.dumps(feature, ensure_ascii=False, separators=(",",":"))+"\n")
+
+
+          def build(source, work):
+              with sqlite3.connect(work/"places.sqlite") as db, (work/"features.geojsonl").open("w") as features:
+                  db.execute("CREATE TABLE places(name TEXT, x INTEGER, y INTEGER, lon REAL, lat REAL, UNIQUE(name,x,y))")
+                  cart = Cartography(features, db)
+                  cart.apply_file(str(source), locations=True, idx="sparse_mem_array")
+                  with (work/"places.json").open("w") as stream:
+                      stream.write("[")
+                      for i, row in enumerate(db.execute("SELECT name,lon,lat FROM places ORDER BY name")):
+                          if i: stream.write(",")
+                          json.dump(row,stream,ensure_ascii=False,separators=(",",":"))
+                      stream.write("]")
+              subprocess.run(["ogr2ogr","-f","PMTiles","map.pmtiles","features.geojsonl","-nln","features",
+                              "-dsco","MINZOOM=7","-dsco","MAXZOOM=14"],check=True)
+              (work/"features.geojsonl").unlink()
+              (work/"places.sqlite").unlink()
+              graph = work/"graph"
+              graph.mkdir()
+              cfg = valhalla.get_config("",str(graph))
+              cfg["mjolnir"]["tile_extract"] = str(work/"graph.tar")
+              cfg["mjolnir"]["tile_dir"] = str(graph)
+              Path("config.json").write_text(json.dumps(cfg))
+              subprocess.run([str(valhalla.PYVALHALLA_DIR/"bin/valhalla_build_tiles"),"-j","2","-c","config.json",str(source)],check=True)
+              subprocess.run(["valhalla_build_extract","-c","config.json"],check=True)
+              cfg["mjolnir"].pop("tile_url",None)
+              cfg["mjolnir"]["tile_dir"]=str(work/"no_loose_tiles")
+              actor=valhalla.Actor(cfg)
+              # Prefer settlement pairs, falling back to named drivable ways for microstates.
+              candidates=checkpoints or road_samples
+              points=list(dict.fromkeys(candidates))
+              if len(points)<2: points=list(dict.fromkeys(points+road_samples))
+              points=points[::max(1,len(points)//90)][:100]
+              verified=False
+              for step in [7,3,1]:
+                  for a,b in zip(points,points[step:]):
+                      try:
+                          for start,dest in ((a,b),(b,a)):
+                              result=actor.route(dict(costing="auto",locations=[dict(lat=p[0],lon=p[1]) for p in (start,dest)]))["trip"]
+                              if result["summary"]["length"]<0.05 or not result["legs"][0]["maneuvers"]:raise ValueError("Route")
+                      except (RuntimeError,ValueError,KeyError):continue
+                      print("Verified two local directions:",a,b,flush=True)
+                      verified=True
+                      break
+                  if verified:break
+              if not verified:raise ValueError("No offline route verified")
+              names=["graph.tar","map.pmtiles","places.json"]
+              sizes=[Path(n).stat().st_size for n in names]
+              if sizes[2]>128<<20 or max(sizes[:2])>2<<30 or sum(sizes)>4<<30:
+                  raise ValueError("Pacchetto oltre i limiti Android")
+              with open("map.pmtiles","rb") as f:
+                  if f.read(8)!=b"PMTiles\x03":raise ValueError("Invalid PMTiles")
+              meta=dict(format=1,name=name,revision=datetime.date.today().isoformat(),
+                        bounds=cart.bounds,sha256={n:digest(Path(n)) for n in names},
+                        country=country["iso"],continent="EU",source=[url for _,url in country["sources"]],source_sha256=digest(source),
+                        attribution="© OpenStreetMap contributors",license="ODbL 1.0",
+                        license_url="https://opendatacommons.org/licenses/odbl/1-0/")
+              with tempfile.NamedTemporaryFile(dir=OUT,suffix=".part",delete=False) as staged:
+                  temp=Path(staged.name)
+              try:
+                  with zipfile.ZipFile(temp,"w",zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
+                      archive.writestr("region.json",json.dumps(meta,ensure_ascii=False))
+                      for member in names:archive.write(member)
+                  with zipfile.ZipFile(temp) as archive:
+                      if archive.testzip():raise ValueError("Archive verification failed")
+                  temp.replace(OUT/(slug+".fdmap"))
+              finally:temp.unlink(missing_ok=True)
+
+
+          if __name__=="__main__":
+              with tempfile.TemporaryDirectory() as tmp:
+                  work=Path(tmp)
+                  os.chdir(work)
+                  build(Path("/data/part.pbf"),work)
+          BUILDER
+          cat > country.py <<'COUNTRY'
+          import hashlib,json,os,subprocess,tempfile,urllib.request,zipfile
+          from pathlib import Path
+          import osmium
+
+          def call(*args):
+              subprocess.run(args,check=True)
+
+          def digest(path):
+              with path.open('rb') as stream:return hashlib.file_digest(stream,'sha256').hexdigest()
+
+          def filtered(source,dest):
+              # Explicitly erase enforcement tags and descriptive metadata on the affected
+              # objects. Geometry nodes remain available to ways referencing them.
+              with osmium.SimpleWriter(str(dest)) as writer:
+                  for item in osmium.FileProcessor(str(source)):
+                      tags=item.tags
+                      if (tags.get('highway')=='speed_camera' or tags.get('type')=='enforcement'
+                              or any('enforcement' in x.k or 'speed_camera' in x.k or 'speed_camera' in x.v for x in tags)):
+                          writer.add(item.replace(tags=[]))
+                      else:writer.add(item)
+
+          def chunks(source,key):
+              if source.stat().st_size<220*1024**2:
+                  yield key,source
+                  return
+              box=json.loads(subprocess.check_output(['osmium','fileinfo','-e','-j',str(source)]))['data']['bbox']
+              x,y,X,Y=box
+              along_x=(X-x)*0.75>Y-y
+              mid=(X+x)/2 if along_x else (y+Y)/2
+              boxes=((x,y,mid+.015,Y),(mid-.015,y,X,Y)) if along_x else ((x,y,X,mid+.015),(x,mid-.015,X,Y))
+              if len(key)>10:raise RuntimeError('Partition did not converge')
+              for n,bounds in enumerate(boxes):
+                  part=source.parent/(key+str(n)+'.osm.pbf')
+                  call('osmium','extract','--strategy','complete_ways','-b',','.join(map(str,bounds)),str(source),'-o',str(part))
+                  if part.stat().st_size>512:yield from chunks(part,key+str(n))
+                  part.unlink()
+              # The overlap retains local junctions at partition boundaries.
+
+          def main():
+              zone=os.environ['ZONE'];iso=os.environ['ISO'];title=os.environ['TITLE'];url=os.environ['SOURCE']
+              run=os.environ['GITHUB_RUN_ID']+'-'+os.environ['GITHUB_RUN_ATTEMPT']
+              tag='atlas-'+zone+'-'+run
+              release='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/releases/download/'+tag+'/'
+              work=Path('/data');out=Path('/output');rows=[]
+              raw=work/'raw.pbf'; clean=work/'roads.osm.pbf'
+              call('curl','-fsSL','--retry','4','-o',str(raw),url)
+              with urllib.request.urlopen(url+'.md5',timeout=45) as r: expected=r.read(256).decode().split()[0]
+              with raw.open('rb') as f:
+                  if hashlib.file_digest(f,'md5').hexdigest()!=expected:raise ValueError('Source checksum mismatch')
+              reduced=work/'reduced.pbf'
+              call('osmium','tags-filter',str(raw),'w/highway','r/type=restriction','r/route=ferry','w/route=ferry','n/place','nwr/addr:housenumber','nwr/amenity','nwr/tourism','w/waterway','w/natural=water','-o',str(reduced))
+              raw.unlink()
+              filtered(reduced,clean);reduced.unlink()
+              call('gh','release','create',tag,'--title','FoldDrive · '+title,'--notes','© OpenStreetMap contributors · ODbL 1.0 · https://www.openstreetmap.org/copyright')
+              for part,source in chunks(clean,''):
+                  slug=zone+('-'+part if part else '')
+                  os.environ.update(ZONE=slug,TITLE=title+(' · '+part if part else ''))
+                  link=work/'part.pbf';link.symlink_to(source)
+                  try:
+                      call('python','/opt/detail.py',str(source),str(out))
+                      call('python','/opt/builder.py')
+                      pack=out/(slug+'.fdmap');side=out/(slug+'.zip');meta=out/(slug+'.json')
+                      with zipfile.ZipFile(side,'w',zipfile.ZIP_DEFLATED) as z:
+                          for a,b in [('poi-fvg.json','poi.json'),('junctions.json','junctions.json'),('detail-fvg.pmtiles','detail.pmtiles')]:
+                              z.write(out/a,b);(out/a).unlink()
+                      with zipfile.ZipFile(pack) as z: manifest=z.read('region.json')
+                      info=json.loads(manifest)
+                      detail=dict(bytes=side.stat().st_size,sha256=digest(side))
+                      meta.write_text(json.dumps(detail))
+                      row=dict(continent='EU',country=iso,name=info['name'],revision=info['revision'],bytes=pack.stat().st_size,
+                               sha256=digest(pack),release=hashlib.sha256(manifest).hexdigest(),url=release+pack.name,
+                               detail_url=release+meta.name,detail_bytes=detail['bytes'],detail_sha256=detail['sha256'],atlas=zone)
+                      call('gh','release','upload',tag,str(pack),str(side),str(meta))
+                      rows.append(row)
+                      for f in (pack,side,meta):f.unlink()
+                  finally:link.unlink()
+              if not rows:raise ValueError('Empty country')
+              (out/'rows.json').write_text(json.dumps(rows,ensure_ascii=False))
+          if __name__=='__main__':main()
+          COUNTRY
+          cat > detail.py <<'DETAIL'
+          """Build FoldDrive's regional display and stop index from the same OSM extract."""
+          import argparse, json, pathlib, subprocess, tempfile
+          import osmium
+
+          categories={'fuel':'fuel','charging_station':'charge','parking':'parking','restaurant':'food',
+                      'fast_food':'food','pharmacy':'pharmacy','hospital':'hospital','museum':'visit',
+                      'attraction':'visit','viewpoint':'visit'}
+          symbols={'fuel':'Carburante','charge':'Ricarica','parking':'P','food':'Ristorante','pharmacy':'Farmacia',
+                   'hospital':'Ospedale','visit':'Visita'}
+          roads={'motorway','trunk','primary','secondary','tertiary'}
+
+          class Detail(osmium.SimpleHandler):
+              def __init__(self,stream):
+                  super().__init__()
+                  self.stream=stream
+                  self.pois=[]
+                  self.seen=set()
+                  self.junctions={}
+                  self.roads={}
+              def feature(self,kind,name,shape,coords):
+                  data=dict(type='Feature',properties=dict(kind=kind,name=name),geometry=dict(type=shape,coordinates=coords))
+                  self.stream.write(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n')
+              def poi(self,t,x,y):
+                  kind=categories.get(t.get('amenity')) or categories.get(t.get('tourism'))
+                  if not kind or t.get('access') in ('private','no'):return
+                  name=t.get('name') or t.get('brand') or t.get('operator') or symbols[kind]
+                  key=(kind,name,round(x,4),round(y,4))
+                  if key in self.seen:return
+                  self.seen.add(key)
+                  self.pois.append([kind,name,round(y,6),round(x,6),t.get('opening_hours',''),t.get('addr:street','')])
+                  self.feature(kind,name,'Point',[x,y])
+              def node(self,n):
+                  if not n.tags or not n.location.valid():return
+                  x,y=n.location.lon,n.location.lat
+                  if n.tags.get('highway')=='motorway_junction' and n.tags.get('name'):
+                      self.junctions[n.id]=[n.tags.get('name'),round(y,6),round(x,6)]
+                  self.poi(n.tags,x,y)
+                  if n.tags.get('place') in ('city','town','village') and n.tags.get('name'):
+                      self.feature('town',n.tags['name'],'Point',[x,y])
+              def way(self,w):
+                  t=w.tags
+                  road=(t.get('highway') or '').removesuffix('_link')
+                  if road not in roads and t.get('amenity') not in categories and t.get('tourism') not in categories:return
+                  if road in ('motorway','trunk','primary') and t.get('ref'):
+                      for n in w.nodes:
+                          if n.ref in self.junctions:self.roads.setdefault(n.ref,set()).update(t.get('ref').split(';'))
+                  coords=[(n.lon,n.lat) for n in w.nodes if n.location.valid()]
+                  if not coords:return
+                  if road in roads and len(coords)>1:self.feature(road,t.get('name') or t.get('ref',''),'LineString',coords)
+                  p=coords[:-1] if len(coords)>1 and coords[0]==coords[-1] else coords
+                  self.poi(t,sum(x for x,y in p)/len(p),sum(y for x,y in p)/len(p))
+
+          def main():
+              ap=argparse.ArgumentParser();ap.add_argument('source');ap.add_argument('out',type=pathlib.Path)
+              a=ap.parse_args();a.out.mkdir(parents=True,exist_ok=True)
+              with tempfile.TemporaryDirectory() as tmp:
+                  source=pathlib.Path(tmp)/'features.geojsonl'
+                  with source.open('w') as f:
+                      scanner=Detail(f);scanner.apply_file(a.source,locations=True,idx='sparse_mem_array')
+                  exits=[v+[sorted(scanner.roads[k])] for k,v in scanner.junctions.items() if k in scanner.roads]
+                  (a.out/'junctions.json').write_text(json.dumps(exits,ensure_ascii=False,separators=(',',':')))
+                  (a.out/'poi-fvg.json').write_text(json.dumps(scanner.pois,ensure_ascii=False,separators=(',',':')))
+                  subprocess.run(['ogr2ogr','-f','PMTiles',str(a.out/'detail-fvg.pmtiles'),str(source),'-nln','detail',
+                      '-dsco','MINZOOM=8','-dsco','MAXZOOM=14'],check=True)
+                  print(len(scanner.pois),'points of interest',flush=True)
+          if __name__=='__main__':main()DETAIL
+          cat > Dockerfile <<'DOCKER'
+          FROM python:3.12-slim-trixie
+          RUN apt-get update && apt-get install -y --no-install-recommends gh gdal-bin osmium-tool curl ca-certificates && rm -rf /var/lib/apt/lists/*
+          RUN pip install --no-cache-dir pyvalhalla==3.9.1 osmium
+          COPY builder.py detail.py country.py /opt/
+          ENV PYTHONUNBUFFERED=1
+          CMD ["python","/opt/country.py"]
+          DOCKER
+          docker build -t atlas .
+      - name: Verifica itinerari e pubblica i pacchetti
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir data output
+          docker run --rm -e ZONE -e ISO -e TITLE -e SOURCE -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -e GITHUB_RUN_ATTEMPT -e GH_REPO -e GH_TOKEN -v "$PWD/data:/data" -v "$PWD/output:/output" atlas
+          sudo cp output/rows.json /tmp/rows.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for n in $(seq 1 15); do
+            git fetch origin main
+            git reset --hard origin/main
+            jq --arg zone "$ZONE" --slurpfile rows /tmp/rows.json '.zones = ([.zones[] | select(.atlas != $zone)] + $rows[0] | sort_by(.name))' catalog.json > next.json
+            mv next.json catalog.json
+            git add catalog.json
+            git commit -m "Atlante Europa · $ZONE"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep $((RANDOM % 6 + 2))
+          done
+          exit 1
+  continent:
+    needs: [plan, country]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Prepara il download completo con ripresa e SHA-256
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MATRIX: ${{ needs.plan.outputs.matrix }}
+        run: |
+          cat > europe-download.py <<'DOWNLOAD'
+          """Download one verified FoldDrive atlas release; rerun to resume."""
+          import hashlib,json,sys,urllib.request
+          from pathlib import Path
+          from shutil import disk_usage
+          manifest=Path(__file__).with_name('europa.json')
+          rows=json.loads(manifest.read_text(encoding='utf-8'))['zones']
+          folder=Path(sys.argv[1] if len(sys.argv)>1 else 'FoldDrive-Europa');folder.mkdir(parents=True,exist_ok=True)
+          for r in rows:
+              for url,size,digest in [(r['url'],r['bytes'],r['sha256']),(r['detail_url'][:-5]+'.zip',r['detail_bytes'],r['detail_sha256'])]:
+                  dst=folder/url.rsplit('/',1)[1]
+                  def valid(path):
+                      if not path.exists() or path.stat().st_size!=size:return False
+                      h=hashlib.sha256()
+                      with path.open('rb') as f:
+                          for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
+                      return h.hexdigest()==digest
+                  if valid(dst):continue
+                  partial=dst.with_suffix(dst.suffix+'.part')
+                  offset=partial.stat().st_size if partial.exists() else 0
+                  if offset>=size:
+                      if valid(partial):partial.replace(dst);continue
+                      partial.unlink();offset=0
+                  if disk_usage(folder).free<size-offset:raise SystemExit('Spazio insufficiente: '+str(dst))
+                  request=urllib.request.Request(url,headers={'Range':f'bytes={offset}-'} if offset else {})
+                  print(dst,flush=True)
+                  with urllib.request.urlopen(request,timeout=90) as response:
+                      append=offset and response.status==206 and response.headers.get('Content-Range','').startswith(f'bytes {offset}-')
+                      with partial.open('ab' if append else 'wb') as f:
+                          for chunk in iter(lambda:response.read(1024*1024),b''):f.write(chunk)
+                  if not valid(partial):partial.unlink();raise SystemExit('Verifica fallita: '+str(dst))
+                  partial.replace(dst)
+          DOWNLOAD
+          python - <<'PYINDEX'
+          import json,os,pathlib
+          expected={r['zone'] for r in json.loads(os.environ['MATRIX'])['include']}
+          rows=[r for r in json.load(open('catalog.json'))['zones'] if r.get('atlas') in expected]
+          assert expected=={r['atlas'] for r in rows}
+          assert len({r['url'] for r in rows})==len(rows)
+          pathlib.Path('europa.json').write_text(json.dumps(dict(zones=rows,bytes=sum(r['bytes']+r['detail_bytes'] for r in rows)),ensure_ascii=False))
+          PYINDEX
+          zip -q FoldDrive-Europa.zip europa.json europe-download.py
+          gh release create "atlas-europa-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" FoldDrive-Europa.zip europa.json --title "FoldDrive · Download Europa" --notes "Estrai lo ZIP e avvia python europe-download.py dalla cartella. © OpenStreetMap contributors · ODbL 1.0."
