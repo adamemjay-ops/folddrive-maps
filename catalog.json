@@ -24,6 +24,20 @@
       "atlas": "andorra"
     },
     {
+      "continent": "EU",
+      "country": "PT",
+      "name": "Azores · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 16872452,
+      "sha256": "f37ec910bc910e1d164538ade51019a0ee545c3fbb7f5b025d9d1b5c22a36955",
+      "release": "24311e3da4db71e7dd3df09d5ee8a5f73bb16317f72f6df8993a341a393bf9ed",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-azores-43257908066-1/azores.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-azores-43257908066-1/azores.json",
+      "detail_bytes": 1954904,
+      "detail_sha256": "48a832ae503afd15350d814f9919c367811d97f2ef0ce8afb5cfd90e6830442d",
+      "atlas": "azores"
+    },
+    {
       "name": "Basilicata",
       "revision": "2026-11-11",
       "bytes": 79546740,
