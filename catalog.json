@@ -39,6 +39,20 @@
     },
     {
       "continent": "EU",
+      "country": "AM",
+      "name": "Armenia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 71925816,
+      "sha256": "77e5900d19fec75d2602400a9c97cb3d9a7f48d75b2922220f441a62f4e65cb9",
+      "release": "fcfccd15622fcca3b656c3588a05392fd62d9c9810547591c615426488aaf0cb",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-armenia-43257908066-1/armenia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-armenia-43257908066-1/armenia.json",
+      "detail_bytes": 4555985,
+      "detail_sha256": "b59cf3312e7efaa393f8d2960ca28f5bfa15031872b9ed3d2e24663bf28c2321",
+      "atlas": "armenia"
+    },
+    {
+      "continent": "EU",
       "country": "AZ",
       "name": "Azerbaijan · Atlas",
       "revision": "2026-11-12",
