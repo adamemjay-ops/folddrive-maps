@@ -216,6 +216,34 @@
       "atlas": "cyprus"
     },
     {
+      "continent": "EU",
+      "country": "CZ",
+      "name": "Czech Republic · 0 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 341324809,
+      "sha256": "b88dbcd58badad1b857ec2f4fb6b1bc16e1b64d2dc6f7f55667984031e39233e",
+      "release": "e33d15177eda5da1dbdb2e838b6cb44fadadbb21b44f2657ce7dac96416798b4",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-czech-republic-43257908066-1/czech-republic-0.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-czech-republic-43257908066-1/czech-republic-0.json",
+      "detail_bytes": 28113549,
+      "detail_sha256": "f19bbb56024c81388776db0669bec6e05ae167c1d33295120aeb9aec8659975b",
+      "atlas": "czech-republic"
+    },
+    {
+      "continent": "EU",
+      "country": "CZ",
+      "name": "Czech Republic · 1 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 285604651,
+      "sha256": "3d4938942803e82a190f46600da58e507f654ccc3cc81e1093318096888743d3",
+      "release": "8ab78b0e20fa4bbccd5e6325ebc152a739200c5a69e24d296e740b37747c1500",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-czech-republic-43257908066-1/czech-republic-1.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-czech-republic-43257908066-1/czech-republic-1.json",
+      "detail_bytes": 22189391,
+      "detail_sha256": "e3dfa7eefe376888b3c642277ffc35394cb92abb5478e83449fb7f7160074d71",
+      "atlas": "czech-republic"
+    },
+    {
       "name": "Emilia-Romagna",
       "revision": "2026-11-11",
       "bytes": 398093183,
