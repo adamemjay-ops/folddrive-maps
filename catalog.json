@@ -110,6 +110,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-lombardia-43066195902-1/lombardia.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "LU",
+      "name": "Luxembourg · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 41657559,
+      "sha256": "b265d61933ff28cb98cfd70c54531bea15d325d38effb4753dad9a9720654bc1",
+      "release": "4cfe0bfd486580a6ea7f38485c3fbac4a002351b9d34952d54f8746a4c368a2a",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-luxembourg-43257908066-1/luxembourg.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-luxembourg-43257908066-1/luxembourg.json",
+      "detail_bytes": 4021151,
+      "detail_sha256": "fddb7fe5b9655c131aee9fbcaa0e8ef91506dce5f081c677eb86849caeba5e0f",
+      "atlas": "luxembourg"
+    },
+    {
       "name": "Marche",
       "revision": "2026-11-11",
       "bytes": 133684381,
