@@ -226,6 +226,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-friuli_veneto-43058005786-1/friuli_veneto.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "GE",
+      "name": "Georgia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 137776652,
+      "sha256": "10f085096630d2073f8e64f0d0ebe602eee0f260cf8444ff1522ccfadc88f3d1",
+      "release": "50dce1896805cd12b6d0487077291087bc14ff6efe76bbe9e6f7274444acd27a",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-georgia-43257908066-1/georgia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-georgia-43257908066-1/georgia.json",
+      "detail_bytes": 9886490,
+      "detail_sha256": "d80f916d8a55336f212c7cce1fe573d20c12502b58ea817cf2a9e85e321680cc",
+      "atlas": "georgia"
+    },
+    {
       "name": "Lazio",
       "revision": "2026-11-11",
       "bytes": 246632197,
