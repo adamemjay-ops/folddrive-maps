@@ -524,6 +524,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-marche-43066195902-1/marche.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "MD",
+      "name": "Moldova · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 126981616,
+      "sha256": "ceb4ec120aed3aa9cc2994d62bca424ddfb1942c8016bd4b74ed3fbde8cd1aec",
+      "release": "1fe5f63b538543217e0868ddb7cca44e720e58190ee045931f46585ac1286157",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-moldova-43257908066-1/moldova.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-moldova-43257908066-1/moldova.json",
+      "detail_bytes": 6501600,
+      "detail_sha256": "8bf3aaa6f32f09b102816015a2e2ea22d2ba3452c349fa63d73b720bd178576b",
+      "atlas": "moldova"
+    },
+    {
       "name": "Molise",
       "revision": "2026-11-11",
       "bytes": 46881015,
