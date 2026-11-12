@@ -280,6 +280,34 @@
       "atlas": "faroe-islands"
     },
     {
+      "continent": "EU",
+      "country": "FI",
+      "name": "Finland · 0 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 505958938,
+      "sha256": "70a7a19fb511d715ac1933848fb5697ddec3beebc95b54b97057db41a7f45333",
+      "release": "a152d095c674fd6b7fca74de7791ea8b35a41f646dcb0490387474e3b574ee11",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-finland-43257908066-1/finland-0.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-finland-43257908066-1/finland-0.json",
+      "detail_bytes": 26769248,
+      "detail_sha256": "8449934736cfd196f5656dc3c66a2959bc3526207ba02bc8925f2b6b247a499f",
+      "atlas": "finland"
+    },
+    {
+      "continent": "EU",
+      "country": "FI",
+      "name": "Finland · 1 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 513335750,
+      "sha256": "f9f955fe7c3d0f50c98e9311b180c99f44b4c7ca98843ff56a8c60690eb4cdfe",
+      "release": "101f0340d7764601a6f35de46439f418812e9daa08caf66e0de08ebaa18c740a",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-finland-43257908066-1/finland-1.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-finland-43257908066-1/finland-1.json",
+      "detail_bytes": 22517416,
+      "detail_sha256": "e0f6b3b11dd58f8154e8a627bbcd65b91c36ee4104c343eb53aac23ba52399dc",
+      "atlas": "finland"
+    },
+    {
       "name": "Friuli-Venezia Giulia",
       "revision": "2026-11-11",
       "bytes": 184076231,
