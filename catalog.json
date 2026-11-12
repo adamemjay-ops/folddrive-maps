@@ -182,6 +182,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-emilia_romagna-43066195902-1/emilia_romagna.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "FO",
+      "name": "Faroe Islands · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 11971463,
+      "sha256": "889a0fca93f806ae49b2ce56d7b0e25464995388472ed3941bc56260a7c31eec",
+      "release": "463deff7aeed5ac8468497692be7820a9af212e0f2b0f20a67d1429dfca86714",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-faroe-islands-43257908066-1/faroe-islands.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-faroe-islands-43257908066-1/faroe-islands.json",
+      "detail_bytes": 625527,
+      "detail_sha256": "2b21ceb3b96a023d99ac9489fffb2c1ce0336498390721af5b4dc4a8df069c13",
+      "atlas": "faroe-islands"
+    },
+    {
       "name": "Friuli-Venezia Giulia",
       "revision": "2026-11-11",
       "bytes": 184076231,
