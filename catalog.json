@@ -130,6 +130,17 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-sicilia-43066195902-1/sicilia.fdmap"
     },
     {
+      "country": "SI",
+      "continent": "EU",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-slovenia-43252005940-1/slovenia.json",
+      "name": "Slovenia",
+      "revision": "2026-11-12",
+      "bytes": 418192148,
+      "release": "33b543fb2442fa3b1349430074977d9807d20e7ab18bcaeb2bca2dfaaee2dee0",
+      "sha256": "26ed078c8c87065acdf61c953d158c274c46762ef2f7987392848c470a7f839e",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-slovenia-43252005940-1/slovenia.fdmap"
+    },
+    {
       "name": "Toscana",
       "revision": "2026-11-11",
       "bytes": 402305209,
