@@ -596,6 +596,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-piemonte-43066195902-1/piemonte.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "PT",
+      "name": "Portugal · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 568866579,
+      "sha256": "c660435cccebd19351917e51d027720e73a795b4c504c34572811ceb86e3475d",
+      "release": "75ef8d6483978de161a3261eced6fef6d22d7d4a56f436c7465c4c02a564a56d",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-portugal-43257908066-1/portugal.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-portugal-43257908066-1/portugal.json",
+      "detail_bytes": 54207466,
+      "detail_sha256": "8e8f5b91383453cf3db549c2f64e5eb7c567793d26626e51c54cd10bad1e3177",
+      "atlas": "portugal"
+    },
+    {
       "name": "Puglia",
       "revision": "2026-11-11",
       "bytes": 271874673,
