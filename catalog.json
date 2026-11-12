@@ -687,6 +687,34 @@
       "atlas": "slovenia"
     },
     {
+      "continent": "EU",
+      "country": "CH",
+      "name": "Switzerland · 0 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 316818447,
+      "sha256": "adc6c84f4af15adf4cc74655e3fd06b125cd89106d8067e65c327c856cfef50f",
+      "release": "f15b3aafb36783cbe85b77351357ed1e377d2ee47ea5b93154c3ffd7070c2dc0",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-switzerland-43257908066-1/switzerland-0.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-switzerland-43257908066-1/switzerland-0.json",
+      "detail_bytes": 19763334,
+      "detail_sha256": "18ec367bfa85fe2c36904da6f068507b40750293cb14fb973d7279fc6509bde7",
+      "atlas": "switzerland"
+    },
+    {
+      "continent": "EU",
+      "country": "CH",
+      "name": "Switzerland · 1 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 271326205,
+      "sha256": "167cbb20cc0608ab68a60e58001ee1a2d36333ac3883ab452810bb5b32f3a25f",
+      "release": "d58313e606c9d835492746abf4bd52e39f154bdd3824f34092261ff1603bfc26",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-switzerland-43257908066-1/switzerland-1.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-switzerland-43257908066-1/switzerland-1.json",
+      "detail_bytes": 16048749,
+      "detail_sha256": "57d379029db25959a0bb2e5c281064e4c2380f325b9d3b339b15f1daa41efc49",
+      "atlas": "switzerland"
+    },
+    {
       "name": "Toscana",
       "revision": "2026-11-11",
       "bytes": 402305209,
