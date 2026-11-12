@@ -645,6 +645,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-slovenia-43252005940-1/slovenia.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "SI",
+      "name": "Slovenia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 174406502,
+      "sha256": "bcfb6038bdc12951c146152847fdd47ab59787a9bb84d47710a083c6daf7bcd4",
+      "release": "1a06df96645dfa62cf0022aceff1923355ed9de0f1f2c5786764aff8df5f578b",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-slovenia-43257908066-1/slovenia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-slovenia-43257908066-1/slovenia.json",
+      "detail_bytes": 10354932,
+      "detail_sha256": "b1c7a5bffaca0c120c20b01286415782875e00bf8a839d0bb5383536ab37eae5",
+      "atlas": "slovenia"
+    },
+    {
       "name": "Toscana",
       "revision": "2026-11-11",
       "bytes": 402305209,
