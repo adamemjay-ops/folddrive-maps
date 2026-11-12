@@ -311,6 +311,20 @@
     },
     {
       "continent": "EU",
+      "country": "GR",
+      "name": "Greece · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 572850282,
+      "sha256": "795274e0900a9ce26b5100a205eb739a14e130c9322329610a57cf698d85e158",
+      "release": "654e06e46e761a06ee608eb5dd2c6cd3678338ae9dd92c33d3bb11cae316615b",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-greece-43257908066-1/greece.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-greece-43257908066-1/greece.json",
+      "detail_bytes": 59468851,
+      "detail_sha256": "cee0aa05ecf305397ab8e7e5b135721bd64228ea0b834ebdb2c6c62993f2be15",
+      "atlas": "greece"
+    },
+    {
+      "continent": "EU",
       "country": "GG",
       "name": "Guernsey and Jersey · Atlas",
       "revision": "2026-11-12",
