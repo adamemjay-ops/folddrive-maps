@@ -604,6 +604,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-puglia-43066195902-1/puglia.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "RO",
+      "name": "Romania · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 452303613,
+      "sha256": "7cafd4f99d824d37eeb6746d58cb8f867bd13e024ac6fd20b52ce2fd51bcf5bc",
+      "release": "aa392e4be269ec70e371418e6c16e0cf4486787ef90b737990a6a50030cc3562",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-romania-43257908066-1/romania.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-romania-43257908066-1/romania.json",
+      "detail_bytes": 46367530,
+      "detail_sha256": "46e8f7a48bffa75f4421fd42b25a14f41eebf56a98201a9fa4b5b749e3feffa1",
+      "atlas": "romania"
+    },
+    {
       "name": "Sardegna",
       "revision": "2026-11-11",
       "bytes": 218479616,
