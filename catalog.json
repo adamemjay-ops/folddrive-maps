@@ -132,6 +132,20 @@
       "atlas": "croatia"
     },
     {
+      "continent": "EU",
+      "country": "CY",
+      "name": "Cyprus · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 64964571,
+      "sha256": "44b4bbae962e31f93bd85ac5b7578a2fa6dd746441b6fb460c0ce5beab30d992",
+      "release": "0b91f040c984099336aff4642600b225d226cbf07340353bffa11977465bfe2d",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-cyprus-43257908066-1/cyprus.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-cyprus-43257908066-1/cyprus.json",
+      "detail_bytes": 5488942,
+      "detail_sha256": "3f29b95304d4cfddadf52dde29e1fbe7c613c07805c7ba9ce52fac5af4bbf884",
+      "atlas": "cyprus"
+    },
+    {
       "name": "Emilia-Romagna",
       "revision": "2026-11-11",
       "bytes": 398093183,
