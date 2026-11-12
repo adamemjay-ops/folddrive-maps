@@ -39,6 +39,20 @@
     },
     {
       "continent": "EU",
+      "country": "AZ",
+      "name": "Azerbaijan · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 131873061,
+      "sha256": "dd882f6c9d5ce0d3b82265a5e756d7a5e636a83b6ac090fc6578286ed286b369",
+      "release": "e14ce74aafb424352bfdc5c27f6e45f1c1c0950603d92c430f8c1c11a4a304ed",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-azerbaijan-43257908066-1/azerbaijan.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-azerbaijan-43257908066-1/azerbaijan.json",
+      "detail_bytes": 10781811,
+      "detail_sha256": "809a9cb351ca21ada35127637002c67cc7f1121d9acfae2105183f5ad47ee51a",
+      "atlas": "azerbaijan"
+    },
+    {
+      "continent": "EU",
       "country": "PT",
       "name": "Azores · Atlas",
       "revision": "2026-11-12",
