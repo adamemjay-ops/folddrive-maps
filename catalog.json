@@ -11,6 +11,20 @@
     },
     {
       "continent": "EU",
+      "country": "AL",
+      "name": "Albania · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 80222057,
+      "sha256": "b798f4defa3927771f188b1b13acf193e7f7df3c99f9381bcaae3b0fb578e223",
+      "release": "738d43537141387295e25dff2ab76ee7a3051a1cb2cd8c1156314018698d8c17",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-albania-43257908066-1/albania.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-albania-43257908066-1/albania.json",
+      "detail_bytes": 6591102,
+      "detail_sha256": "87926c58960bb0e75906dce24181e27cb55efc5097c24523a14ec7b3c273fdca",
+      "atlas": "albania"
+    },
+    {
+      "continent": "EU",
       "country": "AD",
       "name": "Andorra · Atlas",
       "revision": "2026-11-12",
