@@ -452,6 +452,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-liguria-43066195902-1/liguria.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "LT",
+      "name": "Lithuania · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 225511040,
+      "sha256": "1913ffe4575e1188d094cec3a9ba92511017e9e17128d8c93e67084f0ed8acda",
+      "release": "e90b989a5f6a0b58e6d33dcc0292eb2e49c87d8a8a2c6dabd223d879559b5812",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-lithuania-43257908066-1/lithuania.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-lithuania-43257908066-1/lithuania.json",
+      "detail_bytes": 15878735,
+      "detail_sha256": "17332adaff2cfb5a122a1e54b0638a372c8e2c6abc77149ad6d9b1e243faaae6",
+      "atlas": "lithuania"
+    },
+    {
       "name": "Lombardia",
       "revision": "2026-11-11",
       "bytes": 605595832,
