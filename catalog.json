@@ -648,6 +648,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-sicilia-43066195902-1/sicilia.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "SK",
+      "name": "Slovakia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 345249301,
+      "sha256": "27dbbf256fc8aa5e8b4fcca7340ec803317fbea1d220bbf16838054ebbe489a4",
+      "release": "f00b956011e3aea641a4bfdf7b4b4b995dbb0bf2f70a1792c84b986a30a21bed",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-slovakia-43257908066-1/slovakia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-slovakia-43257908066-1/slovakia.json",
+      "detail_bytes": 18038171,
+      "detail_sha256": "a5bc9a52afd7d23a3e0152832dd3ed5157a03161ed5709ed7fb49ab3e582ac34",
+      "atlas": "slovakia"
+    },
+    {
       "country": "SI",
       "continent": "EU",
       "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-slovenia-43252005940-1/slovenia.json",
