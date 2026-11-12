@@ -380,6 +380,20 @@
       "atlas": "kosovo"
     },
     {
+      "continent": "EU",
+      "country": "LV",
+      "name": "Latvia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 189678651,
+      "sha256": "b371962e5009d031bea276fb7c1fc8e9977436dbf0a4819939d018cb019b97c4",
+      "release": "b2762d8c075b4e7d82095833c258209e7ff3d34074201b885aeee6e3e5191174",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-latvia-43257908066-1/latvia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-latvia-43257908066-1/latvia.json",
+      "detail_bytes": 12070529,
+      "detail_sha256": "5615b85f9cafa9542adc54d3d8674e3b4d8e815b83e9ef8fdabc06d768526793",
+      "atlas": "latvia"
+    },
+    {
       "name": "Lazio",
       "revision": "2026-11-11",
       "bytes": 246632197,
