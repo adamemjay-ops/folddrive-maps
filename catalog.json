@@ -102,6 +102,20 @@
       "atlas": "bosnia-herzegovina"
     },
     {
+      "continent": "EU",
+      "country": "BG",
+      "name": "Bulgaria · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 240403424,
+      "sha256": "749bea72de6b3c3e11fbf8fae7b955accf84ee20c4c48371263f9e68949adb1f",
+      "release": "1035a029e42f0921b39b6cb5b931e8460e1443cd90fcbdbe73ae143910765324",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-bulgaria-43257908066-1/bulgaria.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-bulgaria-43257908066-1/bulgaria.json",
+      "detail_bytes": 15124812,
+      "detail_sha256": "e13cd1ead3fdd020bd400ceacb0d87165f322104d23fe10e99cc200e0067c1a3",
+      "atlas": "bulgaria"
+    },
+    {
       "name": "Calabria",
       "revision": "2026-11-11",
       "bytes": 136394221,
