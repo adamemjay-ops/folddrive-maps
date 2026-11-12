@@ -357,7 +357,8 @@ jobs:
                   subprocess.run(['ogr2ogr','-f','PMTiles',str(a.out/'detail-fvg.pmtiles'),str(source),'-nln','detail',
                       '-dsco','MINZOOM=8','-dsco','MAXZOOM=14'],check=True)
                   print(len(scanner.pois),'points of interest',flush=True)
-          if __name__=='__main__':main()DETAIL
+          if __name__=='__main__':main()
+          DETAIL
           cat > Dockerfile <<'DOCKER'
           FROM python:3.12-slim-trixie
           RUN apt-get update && apt-get install -y --no-install-recommends gh gdal-bin osmium-tool curl ca-certificates && rm -rf /var/lib/apt/lists/*
@@ -439,7 +440,13 @@ jobs:
           rows=[r for r in json.load(open('catalog.json'))['zones'] if r.get('atlas') in expected]
           assert expected=={r['atlas'] for r in rows}
           assert len({r['url'] for r in rows})==len(rows)
-          pathlib.Path('europa.json').write_text(json.dumps(dict(zones=rows,bytes=sum(r['bytes']+r['detail_bytes'] for r in rows)),ensure_ascii=False))
+          pathlib.Path('europa.json').write_text(json.dumps(dict(format=1,zones=rows,bytes=sum(r['bytes']+r['detail_bytes'] for r in rows)),ensure_ascii=False))
           PYINDEX
           zip -q FoldDrive-Europa.zip europa.json europe-download.py
           gh release create "atlas-europa-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" FoldDrive-Europa.zip europa.json --title "FoldDrive · Download Europa" --notes "Estrai lo ZIP e avvia python europe-download.py dalla cartella. © OpenStreetMap contributors · ODbL 1.0."
+          cp europa.json atlas-europa.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add atlas-europa.json
+          git commit -m "Indice completo del download Europa"
+          git pull --rebase origin main && git push origin HEAD:main
