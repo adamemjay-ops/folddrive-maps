@@ -518,6 +518,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-molise-43066195902-1/molise.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "MC",
+      "name": "Monaco · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 805436,
+      "sha256": "5074eb98ae9b45a0716129556f5c89d522be51a1af9682fa7984da07659e3ca5",
+      "release": "68f33fcf0be3173e29a415da9f625c61880747c8e7c69e5f996f4c977e7674e9",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-monaco-43257908066-1/monaco.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-monaco-43257908066-1/monaco.json",
+      "detail_bytes": 101339,
+      "detail_sha256": "f27f548b282044a3fcad04ce4fcb30828bb6341304abeac91f82221149020d6e",
+      "atlas": "monaco"
+    },
+    {
       "name": "Piemonte",
       "revision": "2026-11-11",
       "bytes": 456194254,
