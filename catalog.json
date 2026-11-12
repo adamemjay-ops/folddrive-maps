@@ -10,6 +10,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-abruzzo-43066195902-1/abruzzo.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "AD",
+      "name": "Andorra · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 3989396,
+      "sha256": "cc4d6e58dbe62f873c9b733b03422633ab9ded7210a5741cd47efad949fb51b7",
+      "release": "319ff98f0a767e0c3c597f5766b0880949aade0e582142b57346e692e2f25143",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-andorra-43257908066-1/andorra.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-andorra-43257908066-1/andorra.json",
+      "detail_bytes": 429365,
+      "detail_sha256": "dfaffd0b9aa6a62a6e877977ea1146d977f3529cd36cc665820515665e9718c4",
+      "atlas": "andorra"
+    },
+    {
       "name": "Basilicata",
       "revision": "2026-11-11",
       "bytes": 79546740,
