@@ -1,0 +1,107 @@
+name: Dettagli offline delle 20 regioni
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/details062.yml']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view details-062 || gh release create details-062 --title 'Dettagli regionali offline' --notes 'OpenStreetMap contributors, ODbL 1.0. Strade, località e punti di interesse per FoldDrive.'
+  build:
+    needs: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        zone: [friuli_venezia_giulia, veneto, trentino_alto_adige, lombardia, emilia_romagna, piemonte, valle_aosta, liguria, toscana, umbria, marche, lazio, abruzzo, molise, campania, puglia, basilicata, calabria, sicilia, sardegna]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Generate and check offline layers
+        env:
+          ZONE: ${{ matrix.zone }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir output
+          cat > build.py <<'PYTHON'
+          """Build FoldDrive's regional display and stop index from the same OSM extract."""
+          import argparse, json, pathlib, subprocess, tempfile
+          import osmium
+
+          categories={'fuel':'fuel','charging_station':'charge','parking':'parking','restaurant':'food',
+                      'fast_food':'food','pharmacy':'pharmacy','hospital':'hospital','museum':'visit',
+                      'attraction':'visit','viewpoint':'visit'}
+          symbols={'fuel':'Carburante','charge':'Ricarica','parking':'P','food':'Ristorante','pharmacy':'Farmacia',
+                   'hospital':'Ospedale','visit':'Visita'}
+          roads={'motorway','trunk','primary','secondary','tertiary'}
+
+          class Detail(osmium.SimpleHandler):
+              def __init__(self,stream):
+                  super().__init__()
+                  self.stream=stream
+                  self.pois=[]
+                  self.seen=set()
+                  self.junctions={}
+                  self.roads={}
+              def feature(self,kind,name,shape,coords):
+                  data=dict(type='Feature',properties=dict(kind=kind,name=name),geometry=dict(type=shape,coordinates=coords))
+                  self.stream.write(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n')
+              def poi(self,t,x,y):
+                  kind=categories.get(t.get('amenity')) or categories.get(t.get('tourism'))
+                  if not kind or t.get('access') in ('private','no'):return
+                  name=t.get('name') or t.get('brand') or t.get('operator') or symbols[kind]
+                  key=(kind,name,round(x,4),round(y,4))
+                  if key in self.seen:return
+                  self.seen.add(key)
+                  self.pois.append([kind,name,round(y,6),round(x,6),t.get('opening_hours',''),t.get('addr:street','')])
+                  self.feature(kind,name,'Point',[x,y])
+              def node(self,n):
+                  if not n.tags or not n.location.valid():return
+                  x,y=n.location.lon,n.location.lat
+                  if n.tags.get('highway')=='motorway_junction' and n.tags.get('name'):
+                      self.junctions[n.id]=[n.tags.get('name'),round(y,6),round(x,6)]
+                  self.poi(n.tags,x,y)
+                  if n.tags.get('place') in ('city','town','village') and n.tags.get('name'):
+                      self.feature('town',n.tags['name'],'Point',[x,y])
+              def way(self,w):
+                  t=w.tags
+                  road=(t.get('highway') or '').removesuffix('_link')
+                  if road not in roads and t.get('amenity') not in categories and t.get('tourism') not in categories:return
+                  if road in ('motorway','trunk','primary') and t.get('ref'):
+                      for n in w.nodes:
+                          if n.ref in self.junctions:self.roads.setdefault(n.ref,set()).update(t.get('ref').split(';'))
+                  coords=[(n.lon,n.lat) for n in w.nodes if n.location.valid()]
+                  if not coords:return
+                  if road in roads and len(coords)>1:self.feature(road,t.get('name') or t.get('ref',''),'LineString',coords)
+                  p=coords[:-1] if len(coords)>1 and coords[0]==coords[-1] else coords
+                  self.poi(t,sum(x for x,y in p)/len(p),sum(y for x,y in p)/len(p))
+
+          def main():
+              ap=argparse.ArgumentParser();ap.add_argument('source');ap.add_argument('out',type=pathlib.Path)
+              a=ap.parse_args();a.out.mkdir(parents=True,exist_ok=True)
+              with tempfile.TemporaryDirectory() as tmp:
+                  source=pathlib.Path(tmp)/'features.geojsonl'
+                  with source.open('w') as f:
+                      scanner=Detail(f);scanner.apply_file(a.source,locations=True,idx='sparse_mem_array')
+                  exits=[v+[sorted(scanner.roads[k])] for k,v in scanner.junctions.items() if k in scanner.roads]
+                  (a.out/'junctions.json').write_text(json.dumps(exits,ensure_ascii=False,separators=(',',':')))
+                  (a.out/'poi-fvg.json').write_text(json.dumps(scanner.pois,ensure_ascii=False,separators=(',',':')))
+                  subprocess.run(['ogr2ogr','-f','PMTiles',str(a.out/'detail-fvg.pmtiles'),str(source),'-nln','detail',
+                      '-dsco','MINZOOM=8','-dsco','MAXZOOM=14'],check=True)
+                  print(len(scanner.pois),'points of interest',flush=True)
+          if __name__=='__main__':main()
+          PYTHON
+          curl -fL --retry 4 --retry-all-errors --max-time 600 "https://download.openstreetmap.fr/extracts/europe/italy/${ZONE}-latest.osm.pbf" -o region.pbf
+          docker run --rm -v "$PWD:/work" -w /work python:3.12-slim-trixie sh -ec 'apt-get update -qq && apt-get install -y -qq gdal-bin >/dev/null && pip install -q osmium && python build.py region.pbf output && ogrinfo -so output/detail-fvg.pmtiles detail'
+          mv output/poi-fvg.json output/poi.json
+          mv output/detail-fvg.pmtiles output/detail.pmtiles
+          python -c 'import json; x=json.load(open("output/poi.json")); assert len(x)>100 and any(p[0]=="fuel" for p in x)'
+          (cd output && zip -q "../$ZONE.zip" detail.pmtiles poi.json junctions.json)
+          python -c 'import json,os,hashlib,pathlib; s=os.environ["ZONE"]; p=pathlib.Path(s+".zip"); pathlib.Path(s+".json").write_text(json.dumps(dict(bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest(),places=len(json.load(open("output/poi.json"))))))'
+          gh release upload details-062 "$ZONE.zip" "$ZONE.json" --clobber
