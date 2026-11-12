@@ -66,6 +66,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-lazio-43066195902-1/lazio.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "LI",
+      "name": "Liechtenstein · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 4158829,
+      "sha256": "1ee9f2a22d238b81915698bbf92b5eb7c8278320ec52912fccc69a8dfd4f2339",
+      "release": "9b43fca3b25c769e805c2106a5a260b57836c66995efa00a5289e9b83c130346",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-liechtenstein-43257908066-1/liechtenstein.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-liechtenstein-43257908066-1/liechtenstein.json",
+      "detail_bytes": 186909,
+      "detail_sha256": "3518c34ce8f0b66e9fb4e44ba5d3e78cbad04ce5b8441578d0df4ee41145db29",
+      "atlas": "liechtenstein"
+    },
+    {
       "name": "Liguria",
       "revision": "2026-11-11",
       "bytes": 154657090,
