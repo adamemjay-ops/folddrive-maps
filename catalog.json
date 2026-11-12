@@ -731,6 +731,34 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-trentino_alto_adige-43039274223-1/trentino_alto_adige.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "UA",
+      "name": "Ukraine (with Crimea) · 0 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 544385679,
+      "sha256": "886fb72f54da6a1f681ed95115658f7ef4845116ed515dc7fd965fc982368c65",
+      "release": "34b1e7b7805703bf10601b367260dd7240472c638d09e98e83a734343f3e294e",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-ukraine-43257908066-1/ukraine-0.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-ukraine-43257908066-1/ukraine-0.json",
+      "detail_bytes": 34213039,
+      "detail_sha256": "c950010d7ff2bf624341b0401ebb9ecd071125d41137c0d81b4f8a8992cdec27",
+      "atlas": "ukraine"
+    },
+    {
+      "continent": "EU",
+      "country": "UA",
+      "name": "Ukraine (with Crimea) · 1 · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 523235168,
+      "sha256": "fc5c7029d6563f2ef8ce764260a3fff52b7533e6190a0200082425d2695f4fd3",
+      "release": "9e27ebfc319774b9b338f1a64276c1fe4d06d6a5ff4352dcbffd7ea5484c7642",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-ukraine-43257908066-1/ukraine-1.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-ukraine-43257908066-1/ukraine-1.json",
+      "detail_bytes": 31282543,
+      "detail_sha256": "d690eb357622dc3e90ac61f62dd93df1d229ecfef6885b06bf5f675c90df7196",
+      "atlas": "ukraine"
+    },
+    {
       "name": "Umbria",
       "revision": "2026-11-11",
       "bytes": 92900066,
