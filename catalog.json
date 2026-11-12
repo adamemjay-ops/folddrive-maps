@@ -183,6 +183,20 @@
     },
     {
       "continent": "EU",
+      "country": "EE",
+      "name": "Estonia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 139067293,
+      "sha256": "c2363b4ea19ae4006fa4a253cde6fc4a2a26066b5581483e815c17ce473f441a",
+      "release": "447074b41fedfac3812c69ad6c73bc0a3e8163234e479b04e087839282bb2e0f",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-estonia-43257908066-1/estonia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-estonia-43257908066-1/estonia.json",
+      "detail_bytes": 9875283,
+      "detail_sha256": "d5a36f967fa2a28f6f17e9bb504de5c5787c16b37d440d80ec0f3e9a4830424a",
+      "atlas": "estonia"
+    },
+    {
+      "continent": "EU",
       "country": "FO",
       "name": "Faroe Islands · Atlas",
       "revision": "2026-11-12",
