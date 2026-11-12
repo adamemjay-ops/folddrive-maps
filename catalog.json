@@ -118,6 +118,20 @@
       "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/map-campania-43066195902-1/campania.fdmap"
     },
     {
+      "continent": "EU",
+      "country": "HR",
+      "name": "Croatia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 211892571,
+      "sha256": "df5459bf570d5b00a78b753d9e1607511577f72f849cc0c6cb59d0c1961de922",
+      "release": "56458e15ac9215841e6bda1830d3076f7e675f99324194afecc925c56e267772",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-croatia-43257908066-1/croatia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-croatia-43257908066-1/croatia.json",
+      "detail_bytes": 21176699,
+      "detail_sha256": "52a081d57ca225b1849a9257caa287ffd5130984f0a685c4a4ed80e547022800",
+      "atlas": "croatia"
+    },
+    {
       "name": "Emilia-Romagna",
       "revision": "2026-11-11",
       "bytes": 398093183,
