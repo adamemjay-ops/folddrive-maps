@@ -488,6 +488,20 @@
       "atlas": "macedonia"
     },
     {
+      "continent": "EU",
+      "country": "MT",
+      "name": "Malta · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 11007136,
+      "sha256": "cb119d735d3fc9c2d94f1a842024c2aab4c8d1d91f8454712f0cb23eeeb77ef6",
+      "release": "57d402fe7509b2f6558f9cd10c494fcee87c72cc96703f2239408a1a03817e0d",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-malta-43257908066-1/malta.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-malta-43257908066-1/malta.json",
+      "detail_bytes": 1151729,
+      "detail_sha256": "fdc11572905de6b8fd1b8c8147ce15ee88ce2577fbb18f442097adf991800155",
+      "atlas": "malta"
+    },
+    {
       "name": "Marche",
       "revision": "2026-11-11",
       "bytes": 133684381,
