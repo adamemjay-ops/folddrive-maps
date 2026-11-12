@@ -474,6 +474,20 @@
       "atlas": "luxembourg"
     },
     {
+      "continent": "EU",
+      "country": "MK",
+      "name": "Macedonia · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 43058062,
+      "sha256": "5e48cbd10c0730926bf64dc686c3aec91c2ee8d4dda5f07d5af23b00a1ff59eb",
+      "release": "eeb676fac5f63eedc8a9e476fc0bca259ae982f9735d796b8249e3d3925b9c98",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-macedonia-43257908066-1/macedonia.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-macedonia-43257908066-1/macedonia.json",
+      "detail_bytes": 4542212,
+      "detail_sha256": "113dc313b665e31e84fd1436509a50c021d64ac6ab7b1ccbec7df164c4197813",
+      "atlas": "macedonia"
+    },
+    {
       "name": "Marche",
       "revision": "2026-11-11",
       "bytes": 133684381,
