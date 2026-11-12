@@ -395,6 +395,20 @@
     },
     {
       "continent": "EU",
+      "country": "IE",
+      "name": "Ireland and Northern Ireland · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 475968869,
+      "sha256": "0fa1b329710bca427c621150a32ee21d0baf8476f26bd6644d722b121fba41e7",
+      "release": "d21cb68cf6f13f9f8c2ff8b08beeafddf8444be203c4c4dd6ecfa240a5224bc5",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-ireland-and-northern-ireland-43257908066-1/ireland-and-northern-ireland.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-ireland-and-northern-ireland-43257908066-1/ireland-and-northern-ireland.json",
+      "detail_bytes": 36289458,
+      "detail_sha256": "c847222066fcbf7c71003c6a99a6418632775daee73373a2bc6761d8998d523f",
+      "atlas": "ireland-and-northern-ireland"
+    },
+    {
+      "continent": "EU",
       "country": "XK",
       "name": "Kosovo · Atlas",
       "revision": "2026-11-12",
