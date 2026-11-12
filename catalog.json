@@ -339,6 +339,20 @@
     },
     {
       "continent": "EU",
+      "country": "HU",
+      "name": "Hungary · Atlas",
+      "revision": "2026-11-12",
+      "bytes": 357806187,
+      "sha256": "3d40ee30c20dfca88203ab4188e3c97568a7b94acf971db9ab4927f5b76ddcf8",
+      "release": "c835863a7b44931edc0ed06baeb55ce0d51b2845230810a1729cbba702592ccc",
+      "url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-hungary-43257908066-1/hungary.fdmap",
+      "detail_url": "https://github.com/adamemjay-ops/folddrive-maps/releases/download/atlas-hungary-43257908066-1/hungary.json",
+      "detail_bytes": 26684583,
+      "detail_sha256": "92982cdd69694b46e89ed5a4d93f0d589b4a5b962d20f54f6d6493d9fec28430",
+      "atlas": "hungary"
+    },
+    {
+      "continent": "EU",
       "country": "IS",
       "name": "Iceland · Atlas",
       "revision": "2026-11-12",
