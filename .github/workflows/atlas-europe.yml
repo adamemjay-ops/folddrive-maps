@@ -9,8 +9,12 @@ jobs:
   plan:
     runs-on: ubuntu-24.04
     outputs:
+      expected: ${{ steps.plan.outputs.expected }}
       matrix: ${{ steps.plan.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
       - id: plan
         run: |
           cat > plan.py <<'PLAN'
@@ -30,10 +34,15 @@ jobs:
           if len(zones)<40 or not {'DE','FR','IT','SI','GB','ES'}<=set(z['iso'] for z in zones):raise RuntimeError('Incomplete source index: '+str(zones))
           zones.sort(key=lambda z:(z['zone'] not in ('croatia','austria','liechtenstein','luxembourg','andorra'), z['zone']))
           Path('plan.json').write_text(json.dumps(zones,ensure_ascii=False))
-          with open(os.environ['GITHUB_OUTPUT'],'a') as f:print('matrix='+json.dumps({'include':zones},separators=(',',':')),file=f)
+          done={r.get('atlas') for r in json.loads(Path('catalog.json').read_text())['zones']}
+          missing=[z for z in zones if z['zone'] not in done]
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              print('expected='+json.dumps([z['zone'] for z in zones]),file=f)
+              print('matrix='+json.dumps({'include':missing},separators=(',',':')),file=f)
           PLAN
           python plan.py
   country:
+    if: ${{ fromJSON(needs.plan.outputs.matrix).include[0] != null }}
     needs: plan
     runs-on: ubuntu-24.04
     timeout-minutes: 355
@@ -232,20 +241,20 @@ jobs:
                           writer.add(item.replace(tags=[]))
                       else:writer.add(item)
 
-          def chunks(source,key):
-              if source.stat().st_size<220*1024**2:
+          def chunks(source,key,box=None):
+              if source.stat().st_size<64*1024**2:
                   yield key,source
                   return
-              box=json.loads(subprocess.check_output(['osmium','fileinfo','-e','-j',str(source)]))['data']['bbox']
+              box=box or json.loads(subprocess.check_output(['osmium','fileinfo','-e','-j',str(source)]))['data']['bbox']
               x,y,X,Y=box
               along_x=(X-x)*0.75>Y-y
               mid=(X+x)/2 if along_x else (y+Y)/2
               boxes=((x,y,mid+.015,Y),(mid-.015,y,X,Y)) if along_x else ((x,y,X,mid+.015),(x,mid-.015,X,Y))
-              if len(key)>10:raise RuntimeError('Partition did not converge')
+              if len(key)>25:raise RuntimeError('Partition did not converge')
               for n,bounds in enumerate(boxes):
                   part=source.parent/(key+str(n)+'.osm.pbf')
                   call('osmium','extract','--strategy','complete_ways','-b',','.join(map(str,bounds)),str(source),'-o',str(part))
-                  if part.stat().st_size>512:yield from chunks(part,key+str(n))
+                  if part.stat().st_size>512:yield from chunks(part,key+str(n),bounds)
                   part.unlink()
               # The overlap retains local junctions at partition boundaries.
 
@@ -256,8 +265,8 @@ jobs:
               release='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/releases/download/'+tag+'/'
               work=Path('/data');out=Path('/output');rows=[]
               raw=work/'raw.pbf'; clean=work/'roads.osm.pbf'
-              call('curl','-fsSL','--retry','4','-o',str(raw),url)
-              with urllib.request.urlopen(url+'.md5',timeout=45) as r: expected=r.read(256).decode().split()[0]
+              effective=subprocess.check_output(['curl','-fsSL','--retry','4','-o',str(raw),'-w','%{url_effective}',url],text=True)
+              with urllib.request.urlopen(effective+'.md5' if zone=='germany' else url+'.md5',timeout=45) as r: expected=r.read(256).decode().split()[0]
               with raw.open('rb') as f:
                   if hashlib.file_digest(f,'md5').hexdigest()!=expected:raise ValueError('Source checksum mismatch')
               reduced=work/'reduced.pbf'
@@ -268,6 +277,12 @@ jobs:
               for part,source in chunks(clean,''):
                   slug=zone+('-'+part if part else '')
                   os.environ.update(ZONE=slug,TITLE=title+(' · '+part if part else ''))
+                  # Ignore ocean-only extracts with no drivable ways.
+                  roads=work/'roads-check.pbf'
+                  call('osmium','tags-filter','-R',str(source),'w/highway','-o',str(roads))
+                  way_count=int(subprocess.check_output(['osmium','fileinfo','-e','-g','data.count.ways',str(roads)]))
+                  roads.unlink()
+                  if not way_count:continue
                   link=work/'part.pbf';link.symlink_to(source)
                   try:
                       call('python','/opt/detail.py',str(source),str(out))
@@ -301,7 +316,7 @@ jobs:
                       'attraction':'visit','viewpoint':'visit'}
           symbols={'fuel':'Carburante','charge':'Ricarica','parking':'P','food':'Ristorante','pharmacy':'Farmacia',
                    'hospital':'Ospedale','visit':'Visita'}
-          roads={'motorway','trunk','primary','secondary','tertiary'}
+          roads={'motorway','trunk','primary','secondary','tertiary','residential','unclassified','service','living_street','track'}
 
           class Detail(osmium.SimpleHandler):
               def __init__(self,stream):
@@ -373,6 +388,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet
           mkdir data output
           docker run --rm -e ZONE -e ISO -e TITLE -e SOURCE -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -e GITHUB_RUN_ATTEMPT -e GH_REPO -e GH_TOKEN -v "$PWD/data:/data" -v "$PWD/output:/output" atlas
           sudo cp output/rows.json /tmp/rows.json
@@ -390,6 +406,7 @@ jobs:
           done
           exit 1
   continent:
+    if: ${{ always() && needs.plan.result == 'success' && (needs.country.result == 'success' || needs.country.result == 'skipped') }}
     needs: [plan, country]
     runs-on: ubuntu-24.04
     steps:
@@ -399,7 +416,7 @@ jobs:
       - name: Prepara il download completo con ripresa e SHA-256
         env:
           GH_TOKEN: ${{ github.token }}
-          MATRIX: ${{ needs.plan.outputs.matrix }}
+          EXPECTED: ${{ needs.plan.outputs.expected }}
         run: |
           cat > europe-download.py <<'DOWNLOAD'
           """Download one verified FoldDrive atlas release; rerun to resume."""
@@ -436,7 +453,7 @@ jobs:
           DOWNLOAD
           python - <<'PYINDEX'
           import json,os,pathlib
-          expected={r['zone'] for r in json.loads(os.environ['MATRIX'])['include']}
+          expected=set(json.loads(os.environ['EXPECTED']))
           rows=[r for r in json.load(open('catalog.json'))['zones'] if r.get('atlas') in expected]
           assert expected=={r['atlas'] for r in rows}
           assert len({r['url'] for r in rows})==len(rows)
