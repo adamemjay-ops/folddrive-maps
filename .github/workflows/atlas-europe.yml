@@ -40,10 +40,11 @@ jobs:
           event=json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
           import re
           target=re.search(r'\[atlas:([a-z,-]+)\]',(event.get('head_commit') or {}).get('message',''))
+          all_missing={z['zone'] for z in missing}
           if target:
               missing=[z for z in missing if z['zone'] in target.group(1).split(',')]
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
-              print('isolated='+str(bool(target)).lower(),file=f)
+              print('isolated='+str(bool(all_missing - {z['zone'] for z in missing})).lower(),file=f)
               print('expected='+json.dumps([z['zone'] for z in zones]),file=f)
               print('matrix='+json.dumps({'include':missing},separators=(',',':')),file=f)
           PLAN
@@ -308,6 +309,35 @@ jobs:
                   part.unlink()
               # The overlap retains local junctions at partition boundaries.
 
+          def previous_assets(zone):
+              if zone not in ('france','germany'):return {}
+              tag='atlas-'+zone+'-43375819384-1'
+              data=json.loads(subprocess.check_output(['gh','api','repos/'+os.environ['GITHUB_REPOSITORY']+'/releases/tags/'+tag]))
+              lines=subprocess.check_output(['gh','api','--paginate',data['assets_url']+'?per_page=100','--jq','.[] | @json'],text=True).splitlines()
+              return {a['name']:dict(a,url=a['browser_download_url']) for a in map(json.loads,lines)}
+
+          def resume_row(assets,slug,source,iso,zone):
+              names=[slug+ext for ext in ('.fdmap','.zip','.json')]
+              if not all(n in assets for n in names):return None
+              pack,side,meta=[assets[n] for n in names]
+              # region.json is the first ZIP member. Read only its compressed local record.
+              import struct,zlib
+              def read(url,limit,partial=False):
+                  req=urllib.request.Request(url,headers={'Range':f'bytes=0-{limit-1}'} if partial else {})
+                  with urllib.request.urlopen(req,timeout=60) as f:return f.read(limit)
+              header=read(pack['url'],65536,True)
+              if len(header)<30 or header[:4]!=b'PK'+bytes([3,4]):return None
+              method=struct.unpack_from('<H',header,8)[0]
+              size=struct.unpack_from('<I',header,18)[0]
+              n,e=struct.unpack_from('<HH',header,26)
+              if header[30:30+n]!=b'region.json' or method!=8 or not 0<size<=len(header)-30-n-e:return None
+              manifest=zlib.decompress(header[30+n+e:30+n+e+size],-15)
+              info=json.loads(manifest)
+              if info.get('country')!=iso or info.get('source_sha256')!=digest(source):return None
+              detail=json.loads(read(meta['url'],4096))
+              sha=pack.get('digest','') or ''
+              if len(sha)!=71 or not sha.startswith('sha256:') or side.get('digest')!='sha256:'+detail['sha256'] or side['size']!=detail['bytes']:return None
+              return dict(continent='EU',country=iso,name=info['name'],revision=info['revision'],bytes=pack['size'],sha256=sha[7:],release=hashlib.sha256(manifest).hexdigest(),url=pack['url'],detail_url=meta['url'],detail_bytes=side['size'],detail_sha256=detail['sha256'],atlas=zone)
           def main():
               zone=os.environ['ZONE'];iso=os.environ['ISO'];title=os.environ['TITLE'];url=os.environ['SOURCE']
               run=os.environ['GITHUB_RUN_ID']+'-'+os.environ['GITHUB_RUN_ATTEMPT']
@@ -324,11 +354,16 @@ jobs:
               raw.unlink()
               filtered(reduced,clean);reduced.unlink()
               call('gh','release','create',tag,'--title','FoldDrive · '+title,'--notes','© OpenStreetMap contributors · ODbL 1.0 · https://www.openstreetmap.org/copyright')
+              assets=previous_assets(zone)
               for part,source in chunks(clean,''):
                   slug=zone+('-'+part if part else '')
                   os.environ.update(ZONE=slug,TITLE=title+(' · '+part if part else ''))
                   # Relations may extend over open sea without any local member way.
                   # Build only where the extract contains an actual road or ferry geometry.
+                  reused=resume_row(assets,slug,source,iso,zone)
+                  if reused:
+                      print(f'{slug}: reusing verified package',flush=True)
+                      rows.append(reused);continue
                   if not has_transport_geometry(source,slug):continue
                   link=work/'part.pbf';link.symlink_to(source)
                   try:
