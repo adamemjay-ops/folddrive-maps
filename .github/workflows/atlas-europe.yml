@@ -38,10 +38,12 @@ jobs:
           done={r.get('atlas') for r in json.loads(Path('catalog.json').read_text())['zones']}
           missing=[z for z in zones if z['zone'] not in done]
           event=json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
-          if '[atlas:norway]' in (event.get('head_commit') or {}).get('message',''):
-              missing=[z for z in missing if z['zone']=='norway']
+          import re
+          target=re.search(r'\[atlas:([a-z,-]+)\]',(event.get('head_commit') or {}).get('message',''))
+          if target:
+              missing=[z for z in missing if z['zone'] in target.group(1).split(',')]
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
-              print('isolated='+str('[atlas:norway]' in (event.get('head_commit') or {}).get('message','')).lower(),file=f)
+              print('isolated='+str(bool(target)).lower(),file=f)
               print('expected='+json.dumps([z['zone'] for z in zones]),file=f)
               print('matrix='+json.dumps({'include':missing},separators=(',',':')),file=f)
           PLAN
@@ -387,8 +389,15 @@ jobs:
                   exits=[v+[sorted(scanner.roads[k])] for k,v in scanner.junctions.items() if k in scanner.roads]
                   (a.out/'junctions.json').write_text(json.dumps(exits,ensure_ascii=False,separators=(',',':')))
                   (a.out/'poi-fvg.json').write_text(json.dumps(scanner.pois,ensure_ascii=False,separators=(',',':')))
-                  subprocess.run(['ogr2ogr','-f','PMTiles',str(a.out/'detail-fvg.pmtiles'),str(source),'-nln','detail',
-                      '-dsco','MINZOOM=8','-dsco','MAXZOOM=14'],check=True)
+                  size=source.stat().st_size
+                  print(f"{a.source}: {size} bytes of detail GeoJSON",flush=True)
+                  if size:
+                      subprocess.run(['ogr2ogr','-f','PMTiles',str(a.out/'detail-fvg.pmtiles'),"GeoJSONSeq:"+str(source),'-nln','detail',
+                          '-dsco','MINZOOM=8','-dsco','MAXZOOM=14'],check=True)
+                  else:
+                      # PMTiles v3 empty directory and detail layer metadata, no synthetic features.
+                      import base64
+                      (a.out/'detail-fvg.pmtiles').write_bytes(base64.b64decode("UE1UaWxlcwN/AAAAAAAAABUAAAAAAAAAlAAAAAAAAABVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQICAQgOAC62lAAXW8oA0klrAOmkNQgAAAAAAAAAAB+LCABe3vZqAv9jAACN7wLSAQAAAB+LCAAAAAAAAgOrVipLTS7JL4rPSaxMLSpWsoquVspMUbJSSkktSczMUdJRSstMzUkBSlTX6ijlZuZV5efnKllZANmJFRC2oUltbC0Am0ohekgAAAA="))
                   print(len(scanner.pois),'points of interest',flush=True)
           if __name__=='__main__':main()
           DETAIL
