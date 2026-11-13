@@ -11,6 +11,7 @@ jobs:
     outputs:
       expected: ${{ steps.plan.outputs.expected }}
       matrix: ${{ steps.plan.outputs.matrix }}
+      isolated: ${{ steps.plan.outputs.isolated }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -36,7 +37,11 @@ jobs:
           Path('plan.json').write_text(json.dumps(zones,ensure_ascii=False))
           done={r.get('atlas') for r in json.loads(Path('catalog.json').read_text())['zones']}
           missing=[z for z in zones if z['zone'] not in done]
+          event=json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+          if '[atlas:norway]' in (event.get('head_commit') or {}).get('message',''):
+              missing=[z for z in missing if z['zone']=='norway']
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              print('isolated='+str('[atlas:norway]' in (event.get('head_commit') or {}).get('message','')).lower(),file=f)
               print('expected='+json.dumps([z['zone'] for z in zones]),file=f)
               print('matrix='+json.dumps({'include':missing},separators=(',',':')),file=f)
           PLAN
@@ -83,6 +88,7 @@ jobs:
           OUT = Path("/output")
           checkpoints=[]
           road_samples=[]
+          local_pairs=[]
           def digest(path, algorithm="sha256"):
               with path.open("rb") as handle:
                   return hashlib.file_digest(handle, algorithm).hexdigest()
@@ -137,6 +143,13 @@ jobs:
                   if len(road_samples)<1200 and tags.get("highway") in ("primary","secondary","tertiary","residential") and tags.get("name"):
                       point=coords[len(coords)//2]
                       road_samples.append((point[1],point[0]))
+                  if len(local_pairs)<1500 and tags.get("highway") in ("primary","secondary","tertiary","residential","unclassified","service","living_street","track","trunk","motorway","road","primary_link","secondary_link","tertiary_link","trunk_link","motorway_link"):
+                      a=coords[0]
+                      for b in coords[1:]:
+                          meters=111195*math.hypot(b[1]-a[1],(b[0]-a[0])*math.cos(math.radians(a[1])))
+                          if meters>=65:
+                              local_pairs.append(((a[1],a[0]),(b[1],b[0])))
+                              break
                   polygon = kind in ("water","building","land")
                   if not kind or (polygon and (len(coords)<4 or coords[0]!=coords[-1])):
                       return
@@ -178,8 +191,10 @@ jobs:
               if len(points)<2: points=list(dict.fromkeys(points+road_samples))
               points=points[::max(1,len(points)//90)][:100]
               verified=False
-              for step in [7,3,1]:
-                  for a,b in zip(points,points[step:]):
+              sequences=[zip(points,points[step:]) for step in (7,3,1)]
+              sequences.append(local_pairs[::max(1,len(local_pairs)//200)])
+              for pairs in sequences:
+                  for a,b in pairs:
                       try:
                           for start,dest in ((a,b),(b,a)):
                               result=actor.route(dict(costing="auto",locations=[dict(lat=p[0],lon=p[1]) for p in (start,dest)]))["trip"]
@@ -279,10 +294,13 @@ jobs:
                   os.environ.update(ZONE=slug,TITLE=title+(' · '+part if part else ''))
                   # Ignore ocean-only extracts with no drivable ways.
                   roads=work/'roads-check.pbf'
-                  call('osmium','tags-filter','-R',str(source),'w/highway','-o',str(roads))
+                  call('osmium','tags-filter','-R',str(source),'w/highway=motorway,trunk,primary,secondary,tertiary,unclassified,residential,living_street,service,track,road,motorway_link,trunk_link,primary_link,secondary_link,tertiary_link','w/motor_vehicle=yes,permissive,designated,destination','w/motorcar=yes,permissive,designated,destination','w/route=ferry','r/route=ferry','-o',str(roads))
                   way_count=int(subprocess.check_output(['osmium','fileinfo','-e','-g','data.count.ways',str(roads)]))
+                  ferry_count=int(subprocess.check_output(['osmium','fileinfo','-e','-g','data.count.relations',str(roads)]))
                   roads.unlink()
-                  if not way_count:continue
+                  if not (way_count or ferry_count):
+                      print("No candidate motor roads or ferries:",slug,flush=True)
+                      continue
                   link=work/'part.pbf';link.symlink_to(source)
                   try:
                       call('python','/opt/detail.py',str(source),str(out))
@@ -406,7 +424,7 @@ jobs:
           done
           exit 1
   continent:
-    if: ${{ always() && needs.plan.result == 'success' && (needs.country.result == 'success' || needs.country.result == 'skipped') }}
+    if: ${{ always() && needs.plan.outputs.isolated != 'true' && needs.plan.result == 'success' && (needs.country.result == 'success' || needs.country.result == 'skipped') }}
     needs: [plan, country]
     runs-on: ubuntu-24.04
     steps:
