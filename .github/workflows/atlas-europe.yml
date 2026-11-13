@@ -126,6 +126,10 @@ jobs:
                   tags = way.tags
                   if tags.get("highway"):
                       kind = "road"
+                  elif tags.get("route")=="ferry" or way.id in self.ferry_members:
+                      kind = "ferry"
+                  elif tags.get("motor_vehicle") in ("yes","designated","permissive","destination") or tags.get("motorcar") in ("yes","designated","permissive","destination"):
+                      kind = "road"
                   elif tags.get("waterway"):
                       kind = "river"
                   elif tags.get("natural") == "water":
@@ -145,7 +149,7 @@ jobs:
                   if len(road_samples)<1200 and tags.get("highway") in ("primary","secondary","tertiary","residential") and tags.get("name"):
                       point=coords[len(coords)//2]
                       road_samples.append((point[1],point[0]))
-                  if len(local_pairs)<1500 and tags.get("highway") in ("primary","secondary","tertiary","residential","unclassified","service","living_street","track","trunk","motorway","road","primary_link","secondary_link","tertiary_link","trunk_link","motorway_link"):
+                  if len(local_pairs)<1500 and (kind=="ferry" or tags.get("highway") in ("primary","secondary","tertiary","residential","unclassified","service","living_street","track","trunk","motorway","road","primary_link","secondary_link","tertiary_link","trunk_link","motorway_link")):
                       a=coords[0]
                       for b in coords[1:]:
                           meters=111195*math.hypot(b[1]-a[1],(b[0]-a[0])*math.cos(math.radians(a[1])))
@@ -165,6 +169,11 @@ jobs:
               with sqlite3.connect(work/"places.sqlite") as db, (work/"features.geojsonl").open("w") as features:
                   db.execute("CREATE TABLE places(name TEXT, x INTEGER, y INTEGER, lon REAL, lat REAL, UNIQUE(name,x,y))")
                   cart = Cartography(features, db)
+                  cart.ferry_members=set()
+                  class FerryRelations(osmium.SimpleHandler):
+                      def relation(self,r):
+                          if r.tags.get('route')=='ferry':cart.ferry_members.update(m.ref for m in r.members if m.type=='w')
+                  FerryRelations().apply_file(str(source))
                   cart.apply_file(str(source), locations=True, idx="sparse_mem_array")
                   with (work/"places.json").open("w") as stream:
                       stream.write("[")
@@ -172,7 +181,10 @@ jobs:
                           if i: stream.write(",")
                           json.dump(row,stream,ensure_ascii=False,separators=(",",":"))
                       stream.write("]")
-              subprocess.run(["ogr2ogr","-f","PMTiles","map.pmtiles","features.geojsonl","-nln","features",
+              size=(work/"features.geojsonl").stat().st_size
+              print(f"{slug}: {size} bytes of base-map GeoJSON",flush=True)
+              if not size:raise ValueError(f'{slug}: transport geometry found but base map is empty')
+              subprocess.run(["ogr2ogr","-f","PMTiles","map.pmtiles","GeoJSONSeq:features.geojsonl","-nln","features",
                               "-dsco","MINZOOM=7","-dsco","MAXZOOM=14"],check=True)
               (work/"features.geojsonl").unlink()
               (work/"places.sqlite").unlink()
@@ -258,6 +270,27 @@ jobs:
                           writer.add(item.replace(tags=[]))
                       else:writer.add(item)
 
+          def has_transport_geometry(source,slug):
+              roads={'motorway','trunk','primary','secondary','tertiary','unclassified','residential','living_street','service','track','road'}
+              ferry_members=set()
+              class Relations(osmium.SimpleHandler):
+                  def relation(self,r):
+                      if r.tags.get('route')=='ferry':
+                          ferry_members.update(m.ref for m in r.members if m.type=='w')
+              Relations().apply_file(str(source))
+              class Ways(osmium.SimpleHandler):
+                  usable=0
+                  def way(self,w):
+                      t=w.tags
+                      if (t.get('highway','').removesuffix('_link') not in roads and t.get('route')!='ferry' and w.id not in ferry_members and
+                              not any(t.get(k) in ('yes','permissive','designated','destination') for k in ('motor_vehicle','motorcar'))):return
+                      if len(w.nodes)<2:return
+                      if any(not n.location.valid() for n in w.nodes):raise ValueError(f'{slug}: missing geometry for way {w.id}')
+                      if any(n.ref!=w.nodes[0].ref for n in w.nodes):self.usable+=1
+              ways=Ways();ways.apply_file(str(source),locations=True,idx='sparse_mem_array')
+              print(f'{slug}: {ways.usable} candidate transport ways with geometry',flush=True)
+              return ways.usable>0
+
           def chunks(source,key,box=None):
               if source.stat().st_size<64*1024**2:
                   yield key,source
@@ -294,15 +327,9 @@ jobs:
               for part,source in chunks(clean,''):
                   slug=zone+('-'+part if part else '')
                   os.environ.update(ZONE=slug,TITLE=title+(' · '+part if part else ''))
-                  # Ignore ocean-only extracts with no drivable ways.
-                  roads=work/'roads-check.pbf'
-                  call('osmium','tags-filter','-R',str(source),'w/highway=motorway,trunk,primary,secondary,tertiary,unclassified,residential,living_street,service,track,road,motorway_link,trunk_link,primary_link,secondary_link,tertiary_link','w/motor_vehicle=yes,permissive,designated,destination','w/motorcar=yes,permissive,designated,destination','w/route=ferry','r/route=ferry','-o',str(roads))
-                  way_count=int(subprocess.check_output(['osmium','fileinfo','-e','-g','data.count.ways',str(roads)]))
-                  ferry_count=int(subprocess.check_output(['osmium','fileinfo','-e','-g','data.count.relations',str(roads)]))
-                  roads.unlink()
-                  if not (way_count or ferry_count):
-                      print("No candidate motor roads or ferries:",slug,flush=True)
-                      continue
+                  # Relations may extend over open sea without any local member way.
+                  # Build only where the extract contains an actual road or ferry geometry.
+                  if not has_transport_geometry(source,slug):continue
                   link=work/'part.pbf';link.symlink_to(source)
                   try:
                       call('python','/opt/detail.py',str(source),str(out))
