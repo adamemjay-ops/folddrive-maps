@@ -311,10 +311,15 @@ jobs:
 
           def previous_assets(zone):
               if zone not in ('france','germany'):return {}
-              tag='atlas-'+zone+'-43375819384-1'
-              data=json.loads(subprocess.check_output(['gh','api','repos/'+os.environ['GITHUB_REPOSITORY']+'/releases/tags/'+tag]))
-              lines=subprocess.check_output(['gh','api','--paginate',data['assets_url']+'?per_page=100','--jq','.[] | @json'],text=True).splitlines()
-              return {a['name']:dict(a,url=a['browser_download_url']) for a in map(json.loads,lines)}
+              runs=['43375819384-1']
+              if zone=='germany':runs.append('43441379977-1')
+              previous=[]
+              for run in reversed(runs):
+                  tag=f'atlas-{zone}-{run}'
+                  data=json.loads(subprocess.check_output(['gh','api','repos/'+os.environ['GITHUB_REPOSITORY']+'/releases/tags/'+tag]))
+                  lines=subprocess.check_output(['gh','api','--paginate',data['assets_url']+'?per_page=100','--jq','.[] | @json'],text=True).splitlines()
+                  previous.append({a['name']:dict(a,url=a['browser_download_url']) for a in map(json.loads,lines)})
+              return previous
 
           def resume_row(assets,slug,source,iso,zone):
               names=[slug+ext for ext in ('.fdmap','.zip','.json')]
@@ -360,7 +365,10 @@ jobs:
                   os.environ.update(ZONE=slug,TITLE=title+(' · '+part if part else ''))
                   # Relations may extend over open sea without any local member way.
                   # Build only where the extract contains an actual road or ferry geometry.
-                  reused=resume_row(assets,slug,source,iso,zone)
+                  reused=None
+                  for prior in assets:
+                      reused=resume_row(prior,slug,source,iso,zone)
+                      if reused:break
                   if reused:
                       print(f'{slug}: reusing verified package',flush=True)
                       rows.append(reused);continue
