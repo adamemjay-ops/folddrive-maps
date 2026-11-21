@@ -14,26 +14,36 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure archive reader
+        run: command -v 7z || (sudo apt-get update -qq && sudo apt-get install -y p7zip-full)
       - name: Build verified European fixed-camera tiles
         run: |
           python3 - <<'PY'
           import urllib.request,urllib.parse,json,zipfile,struct,math,hashlib,datetime,os
           from collections import defaultdict
-          query='[out:json][timeout:240];node["highway"="speed_camera"];out skel;'
-          data=None
-          for endpoint in ['https://overpass.private.coffee/api/interpreter','https://ovp.dresel.systems/api/interpreter']:
-            try:
-              req=urllib.request.Request(endpoint,data=urllib.parse.urlencode({'data':query}).encode(),headers={'User-Agent':'FoldDrive-camera-index/1.0'})
-              with urllib.request.urlopen(req,timeout=280) as r: candidate=json.load(r)
-              if candidate.get('remark'): raise ValueError(candidate['remark'])
-              if len(candidate.get('elements',[]))<10000: raise ValueError('Incomplete camera response')
-              data=candidate;break
-            except Exception as e: print(type(e).__name__,str(e))
-          if data is None: raise RuntimeError('No complete source: existing index preserved')
+          import sqlite3,subprocess,tempfile
+          source='https://api.github.com/repos/hvdwolf/SpeedAlert_Databases/releases/tags/europe-202611'
+          with urllib.request.urlopen(source,timeout=60) as r: release=json.load(r)
+          data={'elements':[]};counts={}
+          for asset in release['assets']:
+            if not asset['name'].endswith('-camera.sqlite.7z'): continue
+            with urllib.request.urlopen(asset['browser_download_url'],timeout=90) as r: raw=r.read()
+            if len(raw)!=asset['size']: raise ValueError('Incomplete source asset')
+            if asset.get('digest') and asset['digest']!='sha256:'+hashlib.sha256(raw).hexdigest(): raise ValueError('Source digest mismatch')
+            with tempfile.TemporaryDirectory() as tmp:
+              archive=os.path.join(tmp,'camera.7z');open(archive,'wb').write(raw)
+              database=subprocess.check_output(['7z','e','-so',archive],stderr=subprocess.DEVNULL)
+              if not database.startswith(b'SQLite format 3'): raise ValueError('Bad database')
+              path=os.path.join(tmp,'camera.sqlite');open(path,'wb').write(database)
+              db=sqlite3.connect(path);rows=db.execute("select lat,lon from cameras where type='speed'").fetchall();db.close()
+              rows=[(y,x) for y,x in rows if 30<=y<=72 and -25<=x<=45]
+              counts[asset['name'][:2]]=len(rows)
+              data['elements'].extend({'lat':y,'lon':x} for y,x in rows)
+          if len(data['elements'])<15000 or counts.get('it',0)<4000: raise ValueError('Incomplete dataset')
           tiles=defaultdict(set);veneto=0
           for p in data['elements']:
             y,x=p['lat'],p['lon']
-            if not (30<=y<=72 and -25<=x<=45): continue
+            if not (30<=y<=72 and -25<=x<=45): raise ValueError('Bad coordinate')
             tiles['c%d_%d'%(math.floor(y/.05),math.floor(x/.05))].add((round(y*1e6),round(x*1e6)))
             if 44.7<=y<=46.7 and 10.6<=x<=13.2: veneto+=1
           if veneto<100: raise ValueError('Unexpectedly sparse north-east Italy data')
@@ -41,7 +51,7 @@ jobs:
           path='camera-index/cameras-europe.zip'
           with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED) as z:
             for key,pts in sorted(tiles.items()): z.writestr(key,b''.join(struct.pack('>ii',*p) for p in sorted(pts)))
-          meta={'format':1,'count':sum(map(len,tiles.values())),'northEastItalyBoundingBoxCount':veneto,'tiles':len(tiles),'osmTimestamp':data.get('osm3s',{}).get('timestamp_osm_base'),'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'OpenStreetMap contributors / Overpass','license':'ODbL 1.0','bounds':[30,-25,72,45],'sha256':hashlib.sha256(open(path,'rb').read()).hexdigest(),'bytes':os.path.getsize(path),'url':'https://raw.githubusercontent.com/adamemjay-ops/folddrive-maps/main/camera-index/cameras-europe.zip'}
+          meta={'format':1,'count':sum(map(len,tiles.values())),'northEastItalyBoundingBoxCount':veneto,'tiles':len(tiles),'osmTimestamp':data.get('osm3s',{}).get('timestamp_osm_base'),'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'hvdwolf/SpeedAlert_Databases europe-202611; OpenStreetMap contributors','sourceUrl':release['html_url'],'snapshotReleaseDate':release['published_at'],'countryCounts':counts,'license':'CC BY 4.0 databases; OpenStreetMap ODbL 1.0','bounds':[30,-25,72,45],'sha256':hashlib.sha256(open(path,'rb').read()).hexdigest(),'bytes':os.path.getsize(path),'url':'https://raw.githubusercontent.com/adamemjay-ops/folddrive-maps/main/camera-index/cameras-europe.zip'}
           open('camera-index/manifest.json','w').write(json.dumps(meta,indent=2)+'\n')
           print(json.dumps(meta))
           PY
