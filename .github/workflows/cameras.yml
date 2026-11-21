@@ -1,0 +1,56 @@
+name: Fixed camera index
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/cameras.yml']
+permissions:
+  contents: write
+concurrency:
+  group: fixed-camera-index
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build verified European fixed-camera tiles
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.parse,json,zipfile,struct,math,hashlib,datetime,os
+          from collections import defaultdict
+          query='[out:json][timeout:240];node["highway"="speed_camera"](30,-25,72,45);out body;'
+          data=None
+          for endpoint in ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']:
+            try:
+              req=urllib.request.Request(endpoint,data=urllib.parse.urlencode({'data':query}).encode(),headers={'User-Agent':'FoldDrive-camera-index/1.0'})
+              with urllib.request.urlopen(req,timeout=280) as r: candidate=json.load(r)
+              if candidate.get('remark'): raise ValueError(candidate['remark'])
+              if len(candidate.get('elements',[]))<10000: raise ValueError('Incomplete camera response')
+              data=candidate;break
+            except Exception as e: print(type(e).__name__,str(e))
+          if data is None: raise RuntimeError('No complete source: existing index preserved')
+          tiles=defaultdict(set);veneto=0
+          for p in data['elements']:
+            y,x=p['lat'],p['lon']
+            if not (30<=y<=72 and -25<=x<=45): raise ValueError('Bad coordinate')
+            tiles['c%d_%d'%(math.floor(y/.05),math.floor(x/.05))].add((round(y*1e6),round(x*1e6)))
+            if 44.7<=y<=46.7 and 10.6<=x<=13.2: veneto+=1
+          if veneto<100: raise ValueError('Unexpectedly sparse north-east Italy data')
+          os.makedirs('camera-index',exist_ok=True)
+          path='camera-index/cameras-europe.zip'
+          with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED) as z:
+            for key,pts in sorted(tiles.items()): z.writestr(key,b''.join(struct.pack('>ii',*p) for p in sorted(pts)))
+          meta={'format':1,'count':sum(map(len,tiles.values())),'northEastItalyBoundingBoxCount':veneto,'tiles':len(tiles),'osmTimestamp':data.get('osm3s',{}).get('timestamp_osm_base'),'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'OpenStreetMap contributors / Overpass','license':'ODbL 1.0','bounds':[30,-25,72,45],'sha256':hashlib.sha256(open(path,'rb').read()).hexdigest(),'bytes':os.path.getsize(path),'url':'https://raw.githubusercontent.com/adamemjay-ops/folddrive-maps/main/camera-index/cameras-europe.zip'}
+          open('camera-index/manifest.json','w').write(json.dumps(meta,indent=2)+'\n')
+          print(json.dumps(meta))
+          PY
+      - name: Save camera index only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add camera-index
+          git diff --cached --quiet && exit 0
+          git commit -m 'Aggiorna indice autovelox Europa indipendente dai pacchetti mappa'
+          git pull --rebase origin main
+          git push origin HEAD:main
