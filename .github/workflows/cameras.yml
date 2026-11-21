@@ -19,9 +19,9 @@ jobs:
           python3 - <<'PY'
           import urllib.request,urllib.parse,json,zipfile,struct,math,hashlib,datetime,os
           from collections import defaultdict
-          query='[out:json][timeout:240];node["highway"="speed_camera"](30,-25,72,45);out body;'
+          query='[out:json][timeout:240];node["highway"="speed_camera"];out skel;'
           data=None
-          for endpoint in ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']:
+          for endpoint in ['https://overpass.private.coffee/api/interpreter','https://ovp.dresel.systems/api/interpreter']:
             try:
               req=urllib.request.Request(endpoint,data=urllib.parse.urlencode({'data':query}).encode(),headers={'User-Agent':'FoldDrive-camera-index/1.0'})
               with urllib.request.urlopen(req,timeout=280) as r: candidate=json.load(r)
@@ -33,7 +33,7 @@ jobs:
           tiles=defaultdict(set);veneto=0
           for p in data['elements']:
             y,x=p['lat'],p['lon']
-            if not (30<=y<=72 and -25<=x<=45): raise ValueError('Bad coordinate')
+            if not (30<=y<=72 and -25<=x<=45): continue
             tiles['c%d_%d'%(math.floor(y/.05),math.floor(x/.05))].add((round(y*1e6),round(x*1e6)))
             if 44.7<=y<=46.7 and 10.6<=x<=13.2: veneto+=1
           if veneto<100: raise ValueError('Unexpectedly sparse north-east Italy data')
